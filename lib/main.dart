@@ -36,18 +36,18 @@ class _CourseScheduleScreenState extends State<CourseScheduleScreen> {
 
   final Map<int, List<Course>> weekCourses = {
     1: [
-      Course('数学', '张老师', '周一', '8:00 - 10:00', 'A101'),
-      Course('英语', '李老师', '周二', '10:00 - 12:00', 'B201'),
-      Course('物理', '刘老师', '周三', '14:00 - 16:00', 'C301'),
-      Course('化学', '王老师', '周四', '16:00 - 18:00', 'D401'),
-      Course('生物', '赵老师', '周五', '19:00 - 21:00', 'E501'),
+      const Course('数学', '张老师', '周一', '8:00 - 10:00', 'A101'),
+      const Course('英语', '李老师', '周二', '10:00 - 12:00', 'B201'),
+      const Course('物理', '刘老师', '周三', '14:00 - 16:00', 'C301'),
+      const Course('化学', '王老师', '周四', '16:00 - 18:00', 'D401'),
+      const Course('生物', '赵老师', '周五', '19:00 - 21:00', 'E501'),
     ],
     2: [
-      Course('计算机基础', '王老师', '周一', '8:00 - 10:00', 'F601'),
-      Course('物理', '刘老师', '周二', '10:00 - 12:00', 'C301'),
-      Course('高等数学', '张老师', '周三', '14:00 - 16:00', 'A101'),
-      Course('英语', '李老师', '周四', '16:00 - 18:00', 'B201'),
-      Course('体育', '孙老师', '周五', '19:00 - 21:00', '运动场'),
+      const Course('计算机基础', '王老师', '周一', '8:00 - 10:00', 'F601'),
+      const Course('物理', '刘老师', '周二', '10:00 - 12:00', 'C301'),
+      const Course('高等数学', '张老师', '周三', '14:00 - 16:00', 'A101'),
+      const Course('英语', '李老师', '周四', '16:00 - 18:00', 'B201'),
+      const Course('体育', '孙老师', '周五', '19:00 - 21:00', '运动场'),
     ],
   };
 
@@ -234,7 +234,7 @@ class _CourseScheduleScreenState extends State<CourseScheduleScreen> {
               ),
               const SizedBox(height: 1),
               Text(
-                '${course.teacher}',
+                course.teacher,
                 style: TextStyle(
                   fontSize: smallFontSize,
                   color: Colors.grey,
