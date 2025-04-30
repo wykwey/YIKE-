@@ -38,7 +38,21 @@ class AppSettings {
     totalWeeks = prefs.getInt('totalWeeks') ?? 20;
     showWeekend = prefs.getBool('showWeekend') ?? true;
     maxPeriods = prefs.getInt('maxPeriods') ?? 16;
-    periodTimes = Map.from(jsonDecode(prefs.getString('periodTimes') ?? jsonEncode(_defaultPeriodTimes)));
+    try {
+      final periodTimesJson = prefs.getString('periodTimes');
+      if (periodTimesJson != null) {
+        final decoded = jsonDecode(periodTimesJson);
+        if (decoded is Map) {
+          periodTimes = Map<String, String>.from(decoded);
+        } else {
+          periodTimes = Map<String, String>.from(_defaultPeriodTimes);
+        }
+      } else {
+        periodTimes = Map<String, String>.from(_defaultPeriodTimes);
+      }
+    } catch (e) {
+      periodTimes = Map<String, String>.from(_defaultPeriodTimes);
+    }
   }
 
   static Future<void> saveViewPreference(String view) async {

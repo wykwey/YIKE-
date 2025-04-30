@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'components/bottom_nav_bar.dart';
 import 'data/courses.dart';
-import 'services/course_service.dart';
 import 'data/settings.dart';
+import 'constants.dart';
 import 'views/week_view.dart';
 import 'views/day_view.dart';
 import 'views/list_view.dart';
 import 'views/settings_view.dart';
+import 'package:provider/provider.dart';
+import 'states/schedule_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppSettings.init();
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ScheduleState()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
@@ -39,54 +49,107 @@ class MyApp extends StatelessWidget {
   }
 }
 
-class CourseScheduleScreen extends StatefulWidget {
+class CourseScheduleScreen extends StatelessWidget {
   const CourseScheduleScreen({super.key});
 
   @override
-  State<CourseScheduleScreen> createState() => _CourseScheduleScreenState();
-}
-
-class _CourseScheduleScreenState extends State<CourseScheduleScreen> {
-  int _currentWeek = 1;
-  int get currentWeek => _currentWeek;
-  set currentWeek(int value) {
-    if (value >= 1 && value <= AppSettings.totalWeeks) {
-      setState(() {
-        _currentWeek = value;
-        AppSettings.saveWeekPreference(value); // 仍然保存到设置
-      });
-    }
-  }
-  String get selectedView => AppSettings.selectedView;
-  bool get showWeekend => AppSettings.showWeekend;
-
-  List<Course> getWeekCourses(int week) {
-    return CourseService.getWeekCourses(week, allCourses);
-  }
-
-  final int maxPeriods = AppSettings.maxPeriods; // 从设置中获取节数
-
-  @override
   Widget build(BuildContext context) {
+    final state = context.watch<ScheduleState>();
+    final weekDays = AppConstants.weekDays;
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
-      appBar: _buildAppBar(),
+      appBar: AppBar(
+        title: const Text('课程表', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.blueAccent,
+        actions: [
+          if (state.selectedView != '列表视图') ...[
+            IconButton(
+              icon: Icon(Icons.chevron_left, 
+                size: 28, 
+                color: state.currentWeek > 1 ? Colors.white : Colors.white.withOpacity(0.3)),
+              onPressed: state.currentWeek > 1 ? () => state.changeWeek(state.currentWeek - 1) : null,
+            ),
+            Center(child: Text('第${state.currentWeek}周', style: const TextStyle(fontSize: 16))),
+            IconButton(
+              icon: Icon(Icons.chevron_right,
+                size: 28,
+                color: state.currentWeek < AppSettings.totalWeeks ? Colors.white : Colors.white.withOpacity(0.3)),
+              onPressed: state.currentWeek < AppSettings.totalWeeks 
+                ? () => state.changeWeek(state.currentWeek + 1) 
+                : null,
+            ),
+            const SizedBox(width: 8),
+          ],
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SettingsPage(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      bottomNavigationBar: const AppBottomNavBar(),
       body: Column(
         children: [
-          if (selectedView == '周视图') _buildWeekHeader(),
+          if (state.selectedView == '周视图') 
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 70,
+                    margin: const EdgeInsets.only(right: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[400],
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+                    ),
+                    alignment: Alignment.center,
+                    child: const Text('节数', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                  Expanded(
+                    child: Row(
+                      children: List.generate(state.showWeekend ? 7 : 5, (index) {
+                        return Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 2),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue[400],
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
+                            ),
+                            alignment: Alignment.center,
+                            child: Text(weekDays[index],
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        );
+                      }),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           Expanded(
-            child: selectedView == '周视图'
+            child: state.selectedView == '周视图'
                 ? WeekView(
-                  currentWeek: currentWeek,
-                  maxPeriods: AppSettings.maxPeriods,
-                  getWeekCourses: getWeekCourses,
-                  showWeekend: showWeekend,
+                    currentWeek: state.currentWeek,
+                    maxPeriods: AppSettings.maxPeriods,
+                    getWeekCourses: (week) => state.getWeekCourses(week),
+                    showWeekend: state.showWeekend,
                   )
-                : selectedView == '日视图'
+                : state.selectedView == '日视图'
                     ? DayView(
-                        currentWeek: currentWeek,
-                        getWeekCourses: getWeekCourses,
-                        showWeekend: showWeekend,
+                        currentWeek: state.currentWeek,
+                        getWeekCourses: (week) => state.getWeekCourses(week),
+                        showWeekend: state.showWeekend,
                       )
                     : CourseListView(
                         courses: allCourses,
@@ -96,90 +159,4 @@ class _CourseScheduleScreenState extends State<CourseScheduleScreen> {
       ),
     );
   }
-
-  AppBar _buildAppBar() {
-    return AppBar(
-      title: const Text('课程表', style: TextStyle(fontWeight: FontWeight.bold)),
-      backgroundColor: Colors.blueAccent,
-      actions: [
-        if (selectedView != '列表视图') ...[
-          _buildWeekNavigationButton(
-            Icons.chevron_left, 
-            _prevWeek,
-            enabled: currentWeek > 1,
-          ),
-          Center(child: Text('第$currentWeek周', style: const TextStyle(fontSize: 16))),
-          _buildWeekNavigationButton(
-            Icons.chevron_right, 
-            _nextWeek,
-            enabled: currentWeek < AppSettings.totalWeeks,
-          ),
-          const SizedBox(width: 8),
-        ],
-        IconButton(
-          icon: const Icon(Icons.settings),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const SettingsPage(),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildWeekHeader() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 70,
-            margin: const EdgeInsets.only(right: 8),
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.blue[400],
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
-            ),
-            alignment: Alignment.center,
-            child: const Text('节数', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-          Expanded(
-            child: Row(
-              children: List.generate(showWeekend ? 7 : 5, (index) {
-                return Expanded(
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[400],
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(weekDays[index],
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                );
-              }),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWeekNavigationButton(IconData icon, VoidCallback onPressed, {bool enabled = true}) {
-    return IconButton(
-      icon: Icon(icon, size: 28, color: enabled ? Colors.white : Colors.white.withOpacity(0.3)),
-      onPressed: enabled ? onPressed : null,
-    );
-  }
-
-  void _prevWeek() => currentWeek--;
-  void _nextWeek() => currentWeek++;
 }

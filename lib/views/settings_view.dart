@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
 import '../data/settings.dart';
+import '../states/schedule_state.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -112,7 +114,6 @@ class _SettingsPageState extends State<SettingsPage> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          // 视图设置卡片
           Card(
             elevation: 3,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -133,12 +134,12 @@ class _SettingsPageState extends State<SettingsPage> {
                       AppSettings.selectedView == '日视图',
                       AppSettings.selectedView == '列表视图'
                     ],
-                    onPressed: (index) {
-                      setState(() {
-                        AppSettings.saveViewPreference(
-                          index == 0 ? '周视图' : index == 1 ? '日视图' : '列表视图'
-                        );
-                      });
+                    onPressed: (index) async {
+                      final view = index == 0 ? '周视图' : index == 1 ? '日视图' : '列表视图';
+                      await AppSettings.saveViewPreference(view);
+                      final state = context.read<ScheduleState>();
+                      state.changeView(view);
+                      setState(() {});
                     },
                     children: const [
                       Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('周')),
@@ -151,8 +152,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // 日期、周数设置卡片
           Card(
             elevation: 3,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -192,23 +191,17 @@ class _SettingsPageState extends State<SettingsPage> {
                   subtitle: const Text('开启后将在课程表中显示周六和周日'),
                   secondary: const Icon(Icons.weekend),
                   value: AppSettings.showWeekend,
-                  onChanged: (value) {
-                    setState(() {
-                      AppSettings.saveShowWeekend(value);
-                      // 强制刷新视图
-                      Navigator.pop(context);
-                      Navigator.push(context, 
-                        MaterialPageRoute(builder: (context) => const SettingsPage()));
-                    });
+                  onChanged: (value) async {
+                    await AppSettings.saveShowWeekend(value);
+                    final state = context.read<ScheduleState>();
+                    state.toggleWeekend(value);
+                    setState(() {});
                   },
                 ),
               ],
             ),
           ),
-
           const SizedBox(height: 16),
-
-          // 课程时间设置卡片
           Card(
             elevation: 3,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -247,8 +240,6 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
           ),
           const SizedBox(height: 16),
-
-          // 关于卡片
           Card(
             elevation: 3,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

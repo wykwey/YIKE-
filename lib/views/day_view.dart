@@ -89,7 +89,7 @@ class _DayViewState extends State<DayView> {
                       color: selectedDay == day ? Colors.blue.shade100 : Colors.grey.shade200,
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: selectedDay == day
-                          ? [BoxShadow(color: Colors.blue.shade300, blurRadius: 4, offset: Offset(0, 2))]
+                          ? [BoxShadow(color: Colors.blue.shade300, blurRadius: 4, offset: const Offset(0, 2))]
                           : null,
                     ),
                     padding: EdgeInsets.symmetric(horizontal: padding),
@@ -119,7 +119,7 @@ class _DayViewState extends State<DayView> {
       (s) => s['day'] == selectedDay,
       orElse: () => course.schedules.first,
     );
-    final periods = schedule['periods'].join('-');
+    final periods = schedule['periods'].join(',');
     final timeText = '${AppConstants.weekDays[schedule['day'] - 1]} 第$periods节';
     final borderColor = _getCourseColor(course.name);
 
