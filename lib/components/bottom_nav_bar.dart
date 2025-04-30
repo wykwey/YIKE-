@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../states/schedule_state.dart';
+import 'timetable_management_dialog.dart';
 
 class AppBottomNavBar extends StatelessWidget {
   const AppBottomNavBar({super.key});
@@ -20,13 +21,21 @@ class AppBottomNavBar extends StatelessWidget {
         type: BottomNavigationBarType.fixed, // 防止自动切换效果类型
         currentIndex: currentIndex,
         onTap: (index) {
-          final views = ['周视图', '日视图', '列表视图'];
-          state.changeView(views[index]);
+          if (index == 3) {
+            showDialog(
+              context: context,
+              builder: (context) => const TimetableManagementDialog(),
+            );
+          } else {
+            final views = ['周视图', '日视图', '列表视图'];
+            state.changeView(views[index]);
+          }
         },
         items: [
           _buildItem(context, Icons.calendar_view_week, '周视图', currentIndex == 0),
           _buildItem(context, Icons.calendar_today, '日视图', currentIndex == 1),
           _buildItem(context, Icons.list, '列表视图', currentIndex == 2),
+          _buildItem(context, Icons.menu, '课表管理', currentIndex == 3),
         ],
       ),
     );

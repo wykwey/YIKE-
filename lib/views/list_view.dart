@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
-import '../data/courses.dart';
+import '../data/course.dart';
 import '../constants.dart';
 import '../utils/color_utils.dart';
 
+/// 列表视图组件
+///
+/// 显示所有课程的列表视图
+/// 包含:
+/// - 课程按时间排序
+/// - 可折叠的周次显示
+/// - 快速跳转到指定课程
 class CourseListView extends StatelessWidget {
   final List<Course> courses;
 

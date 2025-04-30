@@ -1,16 +1,24 @@
 import 'package:flutter/material.dart';
-import '../data/courses.dart';
+import '../data/course.dart';
 import '../data/settings.dart';
 import '../services/course_service.dart';
 import '../utils/color_utils.dart';
+import 'package:provider/provider.dart';
+import '../components/course_edit_dialog.dart';
+import '../states/schedule_state.dart';
 
+/// 周视图组件
+///
+/// 显示一周的课程安排表格视图
+/// 包含:
+/// - 节数纵轴
+/// - 星期横轴
+/// - 课程卡片展示
 class WeekView extends StatelessWidget {
   final int currentWeek;
   final int maxPeriods;
   final List<Course> Function(int) getWeekCourses;
   final bool showWeekend;
-
-  final Function(Course)? onCourseTap;
 
   const WeekView({
     super.key,
@@ -18,7 +26,6 @@ class WeekView extends StatelessWidget {
     required this.maxPeriods,
     required this.getWeekCourses,
     this.showWeekend = false,
-    this.onCourseTap,
   });
 
   @override
@@ -40,7 +47,7 @@ class WeekView extends StatelessWidget {
 
         return SingleChildScrollView(
           child: Column(
-            children: List.generate(maxPeriods, (index) {
+            children: List.generate(AppSettings.maxPeriods, (index) {
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 height: cellHeight,
@@ -61,8 +68,8 @@ class WeekView extends StatelessWidget {
             day,
             index + 1,
             currentCourses
-          );
-                          return Expanded(child: _buildCourseCell(course, onCourseTap));
+          ) ?? Course.empty();
+                          return Expanded(child: _buildCourseCell(course, context));
                         }),
                       ),
                     ),
@@ -80,15 +87,17 @@ class WeekView extends StatelessWidget {
     final timeText = AppSettings.periodTimes[period.toString()] ?? '未知时间';
     final times = timeText.split('-');
     
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      decoration: BoxDecoration(
-        color: Colors.blue[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blueAccent),
-      ),
-      alignment: Alignment.center,
-      child: Column(
+    return InkWell(
+      onTap: () => AppSettings.showTimeSettingsDialog(context),
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        decoration: BoxDecoration(
+          color: Colors.blue[50],
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.blueAccent),
+        ),
+        alignment: Alignment.center,
+        child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text('第$period节', 
@@ -121,49 +130,74 @@ class WeekView extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 
-  Widget _buildCourseCell(Course course, Function(Course)? onTap) {
+  Widget _buildCourseCell(Course course, BuildContext context) {
     if (course.isEmpty) {
-      return Container(
-        margin: const EdgeInsets.all(2),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.grey[300]!),
+      return InkWell(
+        onTap: () {
+          showDialog(
+                  context: context,
+                  builder: (context) {
+                    final state = Provider.of<ScheduleState>(context, listen: false);
+                    return CourseEditDialog(
+                      course: course.copyWith(),
+                      onSave: (updatedCourse) async {
+                        await state.updateCourse(updatedCourse);
+                      },
+                    );
+                  },
+                ).then((_) {
+                  Provider.of<ScheduleState>(context, listen: false).notifyListeners();
+                });
+        },
+        child: Container(
+          margin: const EdgeInsets.all(2),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey[300]!),
+          ),
         ),
       );
     }
 
     Color borderColor = _getCourseColor(course.name);
 
-    return GestureDetector(
+    return InkWell(
       onTap: () {
-        if (onTap != null && !course.isEmpty) {
-          onTap!(course);
-        }
+        showDialog(
+          context: context,
+          builder: (context) => CourseEditDialog(
+            course: course,
+            onSave: (updatedCourse) {
+              // TODO: 实现课程更新逻辑
+            },
+          ),
+        );
       },
       child: Container(
-      margin: const EdgeInsets.all(2),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(left: BorderSide(color: borderColor, width: 4)),
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 2))],
+        margin: const EdgeInsets.all(2),
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(left: BorderSide(color: borderColor, width: 4)),
+          borderRadius: BorderRadius.circular(8),
+          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 2))],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(course.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const SizedBox(height: 4),
+            Text(course.teacher, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+            Text(course.location, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+          ],
+        ),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(course.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-          const SizedBox(height: 4),
-          Text(course.teacher, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-          Text(course.location, style: const TextStyle(fontSize: 13, color: Colors.grey)),
-        ],
-      ),
-    ),
     );
   }
 

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'components/bottom_nav_bar.dart';
-import 'data/courses.dart';
 import 'data/settings.dart';
-import 'constants.dart';
+import 'constants/app_constants.dart';
+import 'constants/ui_constants.dart';
 import 'views/week_view.dart';
 import 'views/day_view.dart';
 import 'views/list_view.dart';
@@ -11,19 +11,27 @@ import 'views/settings_view.dart';
 import 'package:provider/provider.dart';
 import 'states/schedule_state.dart';
 
+/// 应用入口函数
+/// 
+/// 初始化应用设置并启动Flutter应用
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppSettings.init();
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ScheduleState()),
+        ChangeNotifierProvider(
+          create: (_) => ScheduleState(),
+        ),
       ],
       child: const MyApp(),
     ),
   );
 }
 
+/// 应用根组件
+/// 
+/// 配置全局主题、本地化和路由设置
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -49,6 +57,9 @@ class MyApp extends StatelessWidget {
   }
 }
 
+/// 课程表主界面
+///
+/// 包含顶部导航栏、周数切换和三种视图切换功能
 class CourseScheduleScreen extends StatelessWidget {
   const CourseScheduleScreen({super.key});
 
@@ -152,7 +163,7 @@ class CourseScheduleScreen extends StatelessWidget {
                         showWeekend: state.showWeekend,
                       )
                     : CourseListView(
-                        courses: allCourses,
+                        courses: Provider.of<ScheduleState>(context).currentTimetable?.courses ?? [],
                       ),
           ),
         ],

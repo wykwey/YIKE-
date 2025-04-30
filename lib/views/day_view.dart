@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
-import '../data/courses.dart';
+import '../data/course.dart';
 import '../services/course_service.dart';
 import '../constants.dart';
 
+/// 日视图组件
+///
+/// 显示单日的课程安排列表视图
+/// 包含:
+/// - 时间轴布局
+/// - 课程卡片垂直排列
+/// - 空课时间段显示
 class DayView extends StatefulWidget {
   final int currentWeek;
   final List<Course> Function(int) getWeekCourses;
@@ -28,7 +35,7 @@ class _DayViewState extends State<DayView> {
       widget.currentWeek, 
       selectedDay,
       widget.getWeekCourses(widget.currentWeek)
-    );
+    )..removeWhere((c) => c.isEmpty);
 
     return Column(
       children: [
@@ -41,7 +48,8 @@ class _DayViewState extends State<DayView> {
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   itemCount: dayCourses.length,
                   itemBuilder: (context, index) {
-                    return _buildCourseCard(dayCourses[index]);
+                    final course = dayCourses[index];
+                    return _buildCourseCard(course);
                   },
                 ),
         ),
