@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'data/courses.dart';
+import 'services/course_service.dart';
+import 'data/settings.dart';
 import 'views/week_view.dart';
 import 'views/day_view.dart';
 import 'views/list_view.dart';
+import 'views/settings_view.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await AppSettings.init();
   runApp(const MyApp());
 }
 
@@ -20,6 +26,14 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('zh', 'CN'),
+      ],
       home: const CourseScheduleScreen(),
     );
   }
@@ -33,19 +47,24 @@ class CourseScheduleScreen extends StatefulWidget {
 }
 
 class _CourseScheduleScreenState extends State<CourseScheduleScreen> {
-  int currentWeek = 1;
-  String selectedView = '列表视图';
+  int _currentWeek = 1;
+  int get currentWeek => _currentWeek;
+  set currentWeek(int value) {
+    if (value >= 1 && value <= AppSettings.totalWeeks) {
+      setState(() {
+        _currentWeek = value;
+        AppSettings.saveWeekPreference(value); // 仍然保存到设置
+      });
+    }
+  }
+  String get selectedView => AppSettings.selectedView;
+  bool get showWeekend => AppSettings.showWeekend;
 
   List<Course> getWeekCourses(int week) {
-    return allCourses.where((course) {
-      return course.schedules.any((schedule) {
-        return schedule['weekPattern'] == 'all' ||
-               schedule['weekPattern'].split(',').contains(week.toString());
-      });
-    }).toList();
+    return CourseService.getWeekCourses(week, allCourses);
   }
 
-  final int maxPeriods = 5; // 最多5节课，节数 1-5
+  final int maxPeriods = AppSettings.maxPeriods; // 从设置中获取节数
 
   @override
   Widget build(BuildContext context) {
@@ -58,18 +77,19 @@ class _CourseScheduleScreenState extends State<CourseScheduleScreen> {
           Expanded(
             child: selectedView == '周视图'
                 ? WeekView(
-                    currentWeek: currentWeek,
-                    maxPeriods: maxPeriods,
-                    getWeekCourses: getWeekCourses,
+                  currentWeek: currentWeek,
+                  maxPeriods: AppSettings.maxPeriods,
+                  getWeekCourses: getWeekCourses,
+                  showWeekend: showWeekend,
                   )
                 : selectedView == '日视图'
                     ? DayView(
                         currentWeek: currentWeek,
                         getWeekCourses: getWeekCourses,
+                        showWeekend: showWeekend,
                       )
                     : CourseListView(
-                        currentWeek: currentWeek,
-                        getWeekCourses: getWeekCourses,
+                        courses: allCourses,
                       ),
           ),
         ],
@@ -82,12 +102,31 @@ class _CourseScheduleScreenState extends State<CourseScheduleScreen> {
       title: const Text('课程表', style: TextStyle(fontWeight: FontWeight.bold)),
       backgroundColor: Colors.blueAccent,
       actions: [
-        _buildWeekNavigationButton(Icons.chevron_left, _prevWeek),
-        Center(child: Text('第$currentWeek周', style: const TextStyle(fontSize: 16))),
-        _buildWeekNavigationButton(Icons.chevron_right, _nextWeek),
-        const SizedBox(width: 8),
-        _buildViewSwitcher(),
-        const SizedBox(width: 8),
+        if (selectedView != '列表视图') ...[
+          _buildWeekNavigationButton(
+            Icons.chevron_left, 
+            _prevWeek,
+            enabled: currentWeek > 1,
+          ),
+          Center(child: Text('第$currentWeek周', style: const TextStyle(fontSize: 16))),
+          _buildWeekNavigationButton(
+            Icons.chevron_right, 
+            _nextWeek,
+            enabled: currentWeek < AppSettings.totalWeeks,
+          ),
+          const SizedBox(width: 8),
+        ],
+        IconButton(
+          icon: const Icon(Icons.settings),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SettingsPage(),
+              ),
+            );
+          },
+        ),
       ],
     );
   }
@@ -111,7 +150,7 @@ class _CourseScheduleScreenState extends State<CourseScheduleScreen> {
           ),
           Expanded(
             child: Row(
-              children: List.generate(7, (index) {
+              children: List.generate(showWeekend ? 7 : 5, (index) {
                 return Expanded(
                   child: Container(
                     margin: const EdgeInsets.symmetric(horizontal: 2),
@@ -134,44 +173,13 @@ class _CourseScheduleScreenState extends State<CourseScheduleScreen> {
     );
   }
 
-  Widget _buildWeekNavigationButton(IconData icon, VoidCallback onPressed) {
+  Widget _buildWeekNavigationButton(IconData icon, VoidCallback onPressed, {bool enabled = true}) {
     return IconButton(
-      icon: Icon(icon, size: 28, color: Colors.white),
-      onPressed: onPressed,
+      icon: Icon(icon, size: 28, color: enabled ? Colors.white : Colors.white.withOpacity(0.3)),
+      onPressed: enabled ? onPressed : null,
     );
   }
 
-  Widget _buildViewSwitcher() {
-    return ToggleButtons(
-      borderRadius: BorderRadius.circular(8),
-      isSelected: [
-        selectedView == '周视图', 
-        selectedView == '日视图',
-        selectedView == '列表视图'
-      ],
-      selectedColor: Colors.white,
-      fillColor: Colors.blueAccent,
-      color: Colors.white70,
-      onPressed: (index) {
-        setState(() {
-          selectedView = index == 0 ? '周视图' : index == 1 ? '日视图' : '列表视图';
-        });
-      },
-      children: const [
-        Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('周视图')),
-        Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('日视图')),
-        Padding(padding: EdgeInsets.symmetric(horizontal: 16), child: Text('列表视图')),
-      ],
-    );
-  }
-
-  void _prevWeek() {
-    if (currentWeek > 1) {
-      setState(() => currentWeek--);
-    }
-  }
-
-  void _nextWeek() {
-    setState(() => currentWeek++);
-  }
+  void _prevWeek() => currentWeek--;
+  void _nextWeek() => currentWeek++;
 }

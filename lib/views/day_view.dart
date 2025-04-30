@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import '../data/courses.dart';
+import '../services/course_service.dart';
+import '../constants.dart';
 
 class DayView extends StatefulWidget {
   final int currentWeek;
   final List<Course> Function(int) getWeekCourses;
+  final bool showWeekend;
 
   const DayView({
     super.key,
     required this.currentWeek,
     required this.getWeekCourses,
+    this.showWeekend = false,
   });
 
   @override
@@ -20,14 +24,15 @@ class _DayViewState extends State<DayView> {
 
   @override
   Widget build(BuildContext context) {
-    List<Course> allCourses = widget.getWeekCourses(widget.currentWeek);
-    List<Course> dayCourses = allCourses.where((course) {
-      return course.schedules.any((s) => s['day'] == selectedDay);
-    }).toList();
+    List<Course> dayCourses = CourseService.getDayCourses(
+      widget.currentWeek, 
+      selectedDay,
+      widget.getWeekCourses(widget.currentWeek)
+    );
 
     return Column(
       children: [
-        _buildDaySelector(),
+        _buildDaySelector(context),
         const SizedBox(height: 8),
         Expanded(
           child: dayCourses.isEmpty
@@ -44,85 +49,111 @@ class _DayViewState extends State<DayView> {
     );
   }
 
-Widget _buildDaySelector() {
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-    child: GridView.count(
-      crossAxisCount: 7,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 8,
-      crossAxisSpacing: 8,
-      childAspectRatio: 1.5, // 更改比例，使每个格子更高
-      children: List.generate(7, (i) {
-        int day = i + 1;
-        return InkWell(
-          onTap: () {
-            setState(() {
-              selectedDay = day;
-            });
-          },
-          child: Container(
-            constraints: BoxConstraints(minHeight: 60), // 确保容器有足够高度
-            decoration: BoxDecoration(
-              color: selectedDay == day ? Colors.blue.shade100 : Colors.grey.shade200,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: selectedDay == day
-                  ? [BoxShadow(color: Colors.blue.shade300, blurRadius: 4, offset: Offset(0, 2))]
-                  : null,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 8), // 水平填充
-            child: Center(
-              child: Text(
-                weekDays[i], // 显示周几
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: selectedDay == day ? Colors.blue.shade800 : Colors.black87,
+  Widget _buildDaySelector(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final fontSize = screenWidth > 600 ? 14.0 : 13.0;
+    final padding = screenWidth > 600 ? 10.0 : 8.0;
+    const minHeight = 50.0;
+    const maxItemWidth = 100.0;
+    const spacing = 8.0;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final itemWidth = (constraints.maxWidth - spacing * 6) / 7;
+          final itemAspectRatio = itemWidth / minHeight;
+
+          return GridView.count(
+            crossAxisCount: 7,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: spacing,
+            crossAxisSpacing: spacing,
+            childAspectRatio: itemAspectRatio,
+            children: List.generate(widget.showWeekend ? 7 : 5, (i) {
+              int day = i + 1;
+              return ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: maxItemWidth,
+                  minHeight: minHeight,
                 ),
-                textAlign: TextAlign.center, // 确保文本居中
-              ),
-            ),
-          ),
-        );
-      }),
-    ),
-  );
-}
-
-
+                child: InkWell(
+                  onTap: () {
+                    setState(() {
+                      selectedDay = day;
+                    });
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: selectedDay == day ? Colors.blue.shade100 : Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: selectedDay == day
+                          ? [BoxShadow(color: Colors.blue.shade300, blurRadius: 4, offset: Offset(0, 2))]
+                          : null,
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: padding),
+                    child: Center(
+                      child: Text(
+                        AppConstants.weekDays[i],
+                        style: TextStyle(
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold,
+                          color: selectedDay == day ? Colors.blue.shade800 : Colors.black87,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ),
+              );
+            }),
+          );
+        },
+      ),
+    );
+  }
 
   Widget _buildCourseCard(Course course) {
-    final borderColor = _getCourseColor(course.name);
-    final schedule = course.schedules.firstWhere((s) => s['day'] == selectedDay, orElse: () => course.schedules.first);
+    final schedule = course.schedules.firstWhere(
+      (s) => s['day'] == selectedDay,
+      orElse: () => course.schedules.first,
+    );
     final periods = schedule['periods'].join('-');
-    final timeText = '${weekDays[schedule['day'] - 1]} 第$periods节';
+    final timeText = '${AppConstants.weekDays[schedule['day'] - 1]} 第$periods节';
+    final borderColor = _getCourseColor(course.name);
 
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border(left: BorderSide(color: borderColor, width: 4)),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.black12,
-            blurRadius: 4,
-            offset: Offset(0, 2),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(course.name, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 6),
-          Text(timeText, style: const TextStyle(fontSize: 12, color: Colors.deepPurple)),
-          Text('教师: ${course.teacher}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-          Text('地点: ${course.location}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final large = constraints.maxWidth > 600;
+        final titleSize = large ? 18.0 : 15.0;
+        final detailSize = large ? 14.0 : 12.0;
+        final padding = large ? 16.0 : 12.0;
+        final borderWidth = large ? 5.0 : 4.0;
+
+        return Container(
+          margin: const EdgeInsets.symmetric(vertical: 6),
+          padding: EdgeInsets.all(padding),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12),
+            border: Border(left: BorderSide(color: borderColor, width: borderWidth)),
+            boxShadow: const [
+              BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(course.name, style: TextStyle(fontSize: titleSize, fontWeight: FontWeight.bold)),
+              SizedBox(height: large ? 8 : 6),
+              Text(timeText, style: TextStyle(fontSize: detailSize, color: Colors.deepPurple)),
+              Text('教师: ${course.teacher}', style: TextStyle(fontSize: detailSize, color: Colors.grey)),
+              Text('地点: ${course.location}', style: TextStyle(fontSize: detailSize, color: Colors.grey)),
+            ],
+          ),
+        );
+      },
     );
   }
 

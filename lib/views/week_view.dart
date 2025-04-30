@@ -1,16 +1,20 @@
 import 'package:flutter/material.dart';
 import '../data/courses.dart';
+import '../data/settings.dart';
+import '../services/course_service.dart';
 
 class WeekView extends StatelessWidget {
   final int currentWeek;
   final int maxPeriods;
   final List<Course> Function(int) getWeekCourses;
+  final bool showWeekend;
 
   const WeekView({
     super.key,
     required this.currentWeek,
     required this.maxPeriods,
     required this.getWeekCourses,
+    this.showWeekend = false,
   });
 
   @override
@@ -46,13 +50,14 @@ class WeekView extends StatelessWidget {
                     Expanded(
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: List.generate(7, (dayIndex) {
+                        children: List.generate(showWeekend ? 7 : 5, (dayIndex) {
                           int day = dayIndex + 1;
-                          var course = currentCourses.firstWhere(
-                            (c) => c.schedules.any((s) => 
-                              s['day'] == day && s['periods'].contains(index + 1)),
-                            orElse: () => Course.empty(),
-                          );
+          var course = CourseService.getPeriodCourse(
+            currentWeek,
+            day,
+            index + 1,
+            currentCourses
+          );
                           return Expanded(child: _buildCourseCell(course));
                         }),
                       ),
@@ -76,7 +81,15 @@ class WeekView extends StatelessWidget {
         border: Border.all(color: Colors.blueAccent),
       ),
       alignment: Alignment.center,
-      child: Text('第$period节', style: const TextStyle(fontWeight: FontWeight.bold)),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('第$period节', 
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+          Text(AppSettings.periodTimes[period.toString()] ?? '未知时间',
+              style: const TextStyle(fontSize: 11)),
+        ],
+      ),
     );
   }
 
