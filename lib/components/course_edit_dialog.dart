@@ -272,19 +272,18 @@ class _CourseEditDialogState extends State<CourseEditDialog> {
             if (!mounted) return;
             
             try {
-              final shouldPop = await widget.onSave(updatedCourse);
-              if (!mounted) return;
-              
-              if (shouldPop && mounted) {
-                Navigator.pop(context, true);
+              final success = await widget.onSave(updatedCourse) ?? false;
+              Navigator.pop(context, success);
+              if (success && mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('课程保存成功')),
                 );
               }
             } catch (e) {
+              Navigator.pop(context, false);
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(e.toString())),
+                  SnackBar(content: Text('保存失败: ${e.toString()}')),
                 );
               }
             }

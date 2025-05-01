@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../data/course.dart';
 import '../services/course_service.dart';
-import '../constants.dart';
+import '../constants/app_constants.dart';
 import '../components/course_edit_dialog.dart';
 import '../states/schedule_state.dart';
+import '../utils/color_utils.dart';
 
 /// 日视图组件
 ///
@@ -61,22 +62,22 @@ class _DayViewState extends State<DayView> {
   }
 
   Widget _buildDaySelector(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final fontSize = screenWidth > 600 ? 14.0 : 13.0;
-    final padding = screenWidth > 600 ? 10.0 : 8.0;
-    const minHeight = 50.0;
-    const maxItemWidth = 100.0;
-    const spacing = 8.0;
-
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 6),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final itemWidth = (constraints.maxWidth - spacing * 6) / 7;
+          final isWide = constraints.maxWidth > 600;
+          final fontSize = isWide ? 14.0 : 13.0;
+          final padding = isWide ? 10.0 : 8.0;
+          const minHeight = 50.0;
+          const spacing = 8.0;
+
+          final itemWidth = (constraints.maxWidth - spacing * 6) / 
+              (widget.showWeekend ? 7 : 5);
           final itemAspectRatio = itemWidth / minHeight;
 
           return GridView.count(
-            crossAxisCount: 7,
+            crossAxisCount: widget.showWeekend ? 7 : 5,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: spacing,
@@ -84,27 +85,22 @@ class _DayViewState extends State<DayView> {
             childAspectRatio: itemAspectRatio,
             children: List.generate(widget.showWeekend ? 7 : 5, (i) {
               int day = i + 1;
-              return ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: maxItemWidth,
-                  minHeight: minHeight,
-                ),
-                child: InkWell(
-                  onTap: () {
-                    setState(() {
-                      selectedDay = day;
-                    });
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: selectedDay == day ? Colors.blue.shade100 : Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: selectedDay == day
-                          ? [BoxShadow(color: Colors.blue.shade300, blurRadius: 4, offset: const Offset(0, 2))]
-                          : null,
-                    ),
-                    padding: EdgeInsets.symmetric(horizontal: padding),
-                    child: Center(
+              return InkWell(
+                onTap: () {
+                  setState(() {
+                    selectedDay = day;
+                  });
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: selectedDay == day ? Colors.blue.shade100 : Colors.grey.shade200,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: selectedDay == day
+                        ? [BoxShadow(color: Colors.blue.shade300, blurRadius: 4, offset: const Offset(0, 2))]
+                        : null,
+                  ),
+                  padding: EdgeInsets.symmetric(horizontal: padding),
+                  child: Center(
                       child: Text(
                         AppConstants.weekDays[i],
                         style: TextStyle(
@@ -114,7 +110,6 @@ class _DayViewState extends State<DayView> {
                         ),
                         textAlign: TextAlign.center,
                       ),
-                    ),
                   ),
                 ),
               );
@@ -154,7 +149,9 @@ class _DayViewState extends State<DayView> {
     );
     final periods = schedule['periods'].join(',');
     final timeText = '${AppConstants.weekDays[schedule['day'] - 1]} 第$periods节';
-    final borderColor = _getCourseColor(course.name);
+    final borderColor = course.color != 0 
+        ? Color(course.color) 
+        : ColorUtils.getCourseColor(course.name);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -193,8 +190,4 @@ class _DayViewState extends State<DayView> {
     );
   }
 
-  Color _getCourseColor(String name) {
-    final colors = [Colors.orange, Colors.green, Colors.blue, Colors.purple, Colors.red, Colors.teal];
-    return colors[name.hashCode % colors.length];
-  }
 }

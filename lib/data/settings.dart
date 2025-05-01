@@ -1,21 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-
-import '../data/course.dart';
 import '../components/time_settings_dialog.dart';
 
 class AppSettings {
-  static List<Course> allCourses = [];
-  static late String selectedView;
-  static late int currentWeek;
-  static late DateTime startDate;
-  static late int totalWeeks;
-  static late bool showWeekend;
-  static late int maxPeriods;
-  static late Map<String, String> periodTimes;
-
-  static const Map<String, String> _defaultPeriodTimes = {
+  static const Map<String, String> defaultPeriodTimes = {
     '1': '08:00-08:45',
     '2': '08:50-09:35',
     '3': '09:40-10:25',
@@ -34,80 +21,12 @@ class AppSettings {
     '16': '22:40-23:25'
   };
 
-  static Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    selectedView = prefs.getString('selectedView') ?? '周视图';
-    currentWeek = prefs.getInt('currentWeek') ?? 1;
-    startDate = DateTime.parse(prefs.getString('startDate') ?? DateTime.now().toString());
-    totalWeeks = prefs.getInt('totalWeeks') ?? 20;
-    showWeekend = prefs.getBool('showWeekend') ?? true;
-    maxPeriods = prefs.getInt('maxPeriods') ?? 16;
-    try {
-      final periodTimesJson = prefs.getString('periodTimes');
-      if (periodTimesJson != null) {
-        final decoded = jsonDecode(periodTimesJson);
-        if (decoded is Map) {
-          periodTimes = Map<String, String>.from(decoded);
-        } else {
-          periodTimes = Map<String, String>.from(_defaultPeriodTimes);
-        }
-      } else {
-        periodTimes = Map<String, String>.from(_defaultPeriodTimes);
-      }
-    } catch (e) {
-      periodTimes = Map<String, String>.from(_defaultPeriodTimes);
-    }
-  }
-
-  static Future<void> saveViewPreference(String view) async {
-    selectedView = view;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('selectedView', view);
-  }
-
-  static Future<void> saveWeekPreference(int week) async {
-    currentWeek = week;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('currentWeek', week);
-  }
-
-  static Future<void> saveStartDate(DateTime date) async {
-    startDate = date;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('startDate', date.toString());
-  }
-
-  static Future<void> saveTotalWeeks(int weeks) async {
-    totalWeeks = weeks;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('totalWeeks', weeks);
-  }
-
-  static Future<void> saveShowWeekend(bool show) async {
-    showWeekend = show;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('showWeekend', show);
-  }
-
-  static Future<void> saveWeekendPreference(bool show) async {
-    showWeekend = show;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('showWeekend', show);
-  }
-
-  static Future<void> saveMaxPeriods(int periods) async {
-    maxPeriods = periods;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setInt('maxPeriods', periods);
-  }
-
-  static Future<void> savePeriodTimes(Map<String, String> times) async {
-    periodTimes = times;
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('periodTimes', jsonEncode(times));
-  }
-
-  static Future<void> showTimeSettingsDialog(BuildContext context) async {
+  static Future<void> showTimeSettingsDialog(
+    BuildContext context, 
+    Map<String, String> periodTimes,
+    int maxPeriods,
+    Function(Map<String, String>) onSave
+  ) async {
     final controllers = Map.fromEntries(
       periodTimes.entries
         .where((e) => int.parse(e.key) <= maxPeriods)
@@ -123,7 +42,7 @@ class AppSettings {
       final newTimes = Map.fromEntries(
         controllers.entries.map((e) => MapEntry(e.key, e.value.text)),
       );
-      await savePeriodTimes(newTimes);
+      onSave(newTimes);
     }
   }
 }

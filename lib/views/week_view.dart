@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../data/course.dart';
-import '../data/settings.dart';
 import '../services/course_service.dart';
 import '../utils/color_utils.dart';
 import 'package:provider/provider.dart';
@@ -10,20 +9,27 @@ import '../states/schedule_state.dart';
 
 class WeekView extends StatelessWidget {
   final int currentWeek;
-  final int maxPeriods;
   final List<Course> Function(int) getWeekCourses;
+  final int maxPeriods;
   final bool showWeekend;
 
   const WeekView({
     super.key,
     required this.currentWeek,
-    required this.maxPeriods,
     required this.getWeekCourses,
+    required this.maxPeriods,
     this.showWeekend = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final state = Provider.of<ScheduleState>(context);
+    final timetable = state.currentTimetable;
+    if (timetable == null) return const SizedBox();
+
+    final maxPeriods = timetable.settings['maxPeriods'] ?? 16;
+    final periodTimes = timetable.settings['periodTimes'] ?? {};
+
     List<Course> currentCourses = getWeekCourses(currentWeek);
 
     return LayoutBuilder(
@@ -41,7 +47,7 @@ class WeekView extends StatelessWidget {
 
         return SingleChildScrollView(
           child: Column(
-            children: List.generate(AppSettings.maxPeriods, (index) {
+            children: List.generate(maxPeriods, (index) {
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 height: cellHeight,
@@ -50,7 +56,7 @@ class WeekView extends StatelessWidget {
                   children: [
                     SizedBox(
                       width: 70,
-                      child: _buildPeriodLabel(context, index + 1),
+                      child: _buildPeriodLabel(context, index + 1, periodTimes, maxPeriods),
                     ),
                     Expanded(
                       child: Row(
@@ -77,20 +83,34 @@ class WeekView extends StatelessWidget {
     );
   }
 
-  Widget _buildPeriodLabel(BuildContext context, int period) {
-    final timeText = AppSettings.periodTimes[period.toString()] ?? '未知时间';
+  Widget _buildPeriodLabel(BuildContext context, int period, Map periodTimes, int maxPeriods) {
+    final timeText = periodTimes[period.toString()] ?? '未知时间';
     final times = timeText.split('-');
     
     return InkWell(
       onTap: () => showDialog(
         context: context,
         builder: (context) {
+          final state = Provider.of<ScheduleState>(context, listen: false);
+          final timetable = state.currentTimetable;
+          if (timetable == null) return const SizedBox();
+
+          final currentPeriodTimes = timetable.settings['periodTimes'] ?? {};
+          final currentMaxPeriods = timetable.settings['maxPeriods'] ?? 16;
+
           final controllers = <String, TextEditingController>{};
-          for (var i = 1; i <= AppSettings.maxPeriods; i++) {
+          for (var i = 1; i <= currentMaxPeriods; i++) {
             controllers[i.toString()] = TextEditingController(
-              text: AppSettings.periodTimes[i.toString()]);
+              text: currentPeriodTimes[i.toString()] ?? '');
           }
-          return TimeSettingsDialog(controllers: controllers);
+
+          return TimeSettingsDialog(
+            controllers: controllers,
+            onSave: (newTimes) async {
+              timetable.settings['periodTimes'] = newTimes;
+              await state.updateTimetable(timetable);
+            },
+          );
         },
       ),
       child: Container(
@@ -139,25 +159,12 @@ class WeekView extends StatelessWidget {
   }
 
   Widget _buildCourseCell(Course course, BuildContext context) {
-    /// 刷新课程表状态
-    /// 
-    /// 通过更新一个空的课程对象来触发状态更新，
-    /// 这样可以避免直接调用protected的notifyListeners方法
     void refreshScheduleState(BuildContext context) {
       final state = Provider.of<ScheduleState>(context, listen: false);
-      final emptyCourse = Course.empty(); // 移除const
+      final emptyCourse = Course.empty();
       state.updateCourse(emptyCourse);
     }
 
-    /// 处理课程编辑完成后的回调
-    /// 
-    /// 参数:
-    /// - saved: 是否保存了修改
-    /// 
-    /// 功能:
-    /// 1. 检查context是否仍然mounted
-    /// 2. 通过更新空课程触发状态刷新
-    /// 3. 避免直接调用notifyListeners
     void handleEditComplete(dynamic saved) {
       if (saved == true && context.mounted) {
         refreshScheduleState(context);
@@ -191,7 +198,9 @@ class WeekView extends StatelessWidget {
       );
     }
 
-    Color borderColor = _getCourseColor(course.name);
+    Color borderColor = course.color != 0 
+        ? Color(course.color) 
+        : ColorUtils.getCourseColor(course.name);
 
     return InkWell(
       onTap: () {
@@ -229,9 +238,5 @@ class WeekView extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Color _getCourseColor(String name) {
-    return ColorUtils.getCourseColor(name);
   }
 }

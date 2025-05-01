@@ -23,7 +23,7 @@ import 'states/schedule_state.dart';
 /// - WidgetsFlutterBinding.ensureInitialized()是运行Flutter应用的必要前提
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await AppSettings.init();
+    // 设置初始化已迁移到课表级别
   runApp(
     MultiProvider(
       providers: [
@@ -104,9 +104,9 @@ class CourseScheduleScreen extends StatelessWidget {
             IconButton(
               icon: Icon(Icons.chevron_right,
                 size: 28,
-                color: state.currentWeek < AppSettings.totalWeeks ? const Color(0xFFFFFFFF) : const Color.fromRGBO(255, 255, 255, 0.3)),
-              onPressed: state.currentWeek < AppSettings.totalWeeks 
-                ? () => state.changeWeek(state.currentWeek + 1) 
+                color: state.currentWeek < state.totalWeeks ? const Color(0xFFFFFFFF) : const Color.fromRGBO(255, 255, 255, 0.3)),
+              onPressed: state.currentWeek < state.totalWeeks
+                ? () => state.changeWeek(state.currentWeek + 1)
                 : null,
             ),
             const SizedBox(width: 8),
@@ -171,7 +171,7 @@ class CourseScheduleScreen extends StatelessWidget {
             child: state.selectedView == '周视图'
                 ? WeekView(
                     currentWeek: state.currentWeek,
-                    maxPeriods: AppSettings.maxPeriods,
+                    maxPeriods: state.maxPeriods,
                     getWeekCourses: (week) => state.getWeekCourses(week),
                     showWeekend: state.showWeekend,
                   )

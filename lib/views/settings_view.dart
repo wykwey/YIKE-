@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../data/settings.dart';
 import '../states/schedule_state.dart';
-import '../components/time_settings_dialog.dart';
+import '../data/settings.dart';
+import '../components/start_date_picker.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -13,51 +12,31 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  Future<void> _pickStartDate() async {
-    if (!mounted) return;
-    
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: AppSettings.startDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-      locale: const Locale('zh', 'CN'),
-      cancelText: '取消',
-      confirmText: '确定',
-    );
-    
-    if (picked != null && mounted) {
-      await AppSettings.saveStartDate(picked);
-      setState(() {});
-    }
-  }
-
   Future<void> _showTimeSettingsDialog() async {
     if (!mounted) return;
-    
-    final controllers = Map.fromEntries(
-      AppSettings.periodTimes.entries.map(
-        (e) => MapEntry(e.key, TextEditingController(text: e.value)),
-      ),
-    );
 
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => TimeSettingsDialog(controllers: controllers),
-    );
+    final state = Provider.of<ScheduleState>(context, listen: false);
+    final timetable = state.currentTimetable;
+    if (timetable == null) return;
 
-    if (result == true && mounted) {
-      final newTimes = Map.fromEntries(
-        controllers.entries.map((e) => MapEntry(e.key, e.value.text)),
-      );
-      await AppSettings.savePeriodTimes(newTimes);
-      setState(() {});
-    }
+    final periodTimes = timetable.settings['periodTimes'] ?? AppSettings.defaultPeriodTimes;
+    final maxPeriods = timetable.settings['maxPeriods'] ?? 16;
+
+    await AppSettings.showTimeSettingsDialog(
+      context,
+      periodTimes is Map ? Map<String, String>.from(periodTimes) : AppSettings.defaultPeriodTimes,
+      maxPeriods is int ? maxPeriods : 16,
+      (newTimes) async {
+        timetable.settings['periodTimes'] = newTimes;
+        await state.updateTimetable(timetable);
+        if (mounted) setState(() {});
+      },
+    );
   }
 
   void _showAboutDialog() {
     if (!mounted) return;
-    
+
     showAboutDialog(
       context: context,
       applicationName: '课程表应用',
@@ -76,164 +55,173 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final dateStr = DateFormat('yyyy-MM-dd').format(AppSettings.startDate);
+    final state = Provider.of<ScheduleState>(context);
+    final timetable = state.currentTimetable;
+    if (timetable == null) return const SizedBox();
+
+    final selectedView = timetable.settings['selectedView'] ?? '周视图';
+    final totalWeeks = timetable.settings['totalWeeks'] ?? 20;
+    final showWeekend = timetable.settings['showWeekend'] ?? true;
+    final maxPeriods = timetable.settings['maxPeriods'] ?? 16;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('设置'),
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text('视图模式', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                  ToggleButtons(
-                    borderRadius: BorderRadius.circular(8),
-                    borderColor: Colors.grey,
-                    selectedColor: Colors.white,
-                    fillColor: Colors.blue,
-                    color: Colors.black87,
-                    isSelected: [
-                      AppSettings.selectedView == '周视图',
-                      AppSettings.selectedView == '日视图',
-                      AppSettings.selectedView == '列表视图'
-                    ],
-                    onPressed: (index) async {
-                      if (!mounted) return;
-                      
-                      final view = index == 0 ? '周视图' : index == 1 ? '日视图' : '列表视图';
-                      await AppSettings.saveViewPreference(view);
-                      
-                      if (mounted) {
-                        final state = context.read<ScheduleState>();
-                        state.changeView(view);
-                        setState(() {});
-                      }
-                    },
-                    children: const [
-                      Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('周')),
-                      Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('日')),
-                      Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('列表')),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isSmallScreen = constraints.maxWidth < 400;
+          return ListView(
+            padding: EdgeInsets.all(isSmallScreen ? 8 : 16),
+            children: [
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('视图模式', 
+                        style: TextStyle(
+                          fontSize: isSmallScreen ? 14 : 16, 
+                          fontWeight: FontWeight.bold
+                        )),
+                      ToggleButtons(
+                        borderRadius: BorderRadius.circular(8),
+                        borderColor: Colors.grey,
+                        selectedColor: Colors.white,
+                        fillColor: Colors.blue,
+                        color: Colors.black87,
+                        isSelected: [
+                          selectedView == '周视图',
+                          selectedView == '日视图',
+                          selectedView == '列表视图'
+                        ],
+                        onPressed: (index) async {
+                          if (!mounted) return;
+
+                          final view = index == 0 ? '周视图' : index == 1 ? '日视图' : '列表视图';
+                          state.changeView(view);
+
+                          if (mounted) setState(() {});
+                        },
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 8), 
+                            child: Text('周', style: TextStyle(fontSize: isSmallScreen ? 12 : 14))),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 8), 
+                            child: Text('日', style: TextStyle(fontSize: isSmallScreen ? 12 : 14))),
+                          Padding(
+                            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 8), 
+                            child: Text('列表', style: TextStyle(fontSize: isSmallScreen ? 12 : 14))),
+                        ],
+                      ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Column(
-              children: [
-                ListTile(
-                  leading: const Icon(Icons.calendar_today),
-                  title: const Text('开始上课日期'),
-                  subtitle: Text(dateStr),
-                  trailing: const Icon(Icons.edit_calendar),
-                  onTap: _pickStartDate,
+              SizedBox(height: isSmallScreen ? 12 : 16),
+              const StartDatePicker(),
+              SizedBox(height: isSmallScreen ? 12 : 16),
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Column(
+                  children: [
+                    const ListTile(
+                      leading: Icon(Icons.timeline),
+                      title: Text('总周数'),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Slider(
+                        value: totalWeeks.toDouble(),
+                        min: 1,
+                        max: 30,
+                        divisions: 29,
+                        label: '$totalWeeks',
+                        onChanged: (value) async {
+                          if (mounted) {
+                            timetable.settings['totalWeeks'] = value.round();
+                            await state.updateTimetable(timetable);
+                            setState(() {});
+                          }
+                        },
+                      ),
+                    ),
+                    const Divider(),
+                    SwitchListTile(
+                      title: const Text('是否显示周末'),
+                      subtitle: const Text('开启后将在课程表中显示周六和周日'),
+                      secondary: const Icon(Icons.weekend),
+                      value: showWeekend,
+                      onChanged: (value) async {
+                        timetable.settings['showWeekend'] = value;
+                        await state.updateTimetable(timetable);
+                        state.toggleWeekend(value);
+                        if (mounted) setState(() {});
+                      },
+                    ),
+                  ],
                 ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.timeline),
-                  title: const Text('总周数'),
-                  subtitle: Text('${AppSettings.totalWeeks} 周'),
+              ),
+              SizedBox(height: isSmallScreen ? 12 : 16),
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Column(
+                  children: [
+                    const ListTile(
+                      leading: Icon(Icons.schedule),
+                      title: Text('课程节数'),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Slider(
+                        value: maxPeriods.toDouble(),
+                        min: 1,
+                        max: 16,
+                        divisions: 15,
+                        label: '$maxPeriods',
+                        onChanged: (value) async {
+                          if (mounted) {
+                            timetable.settings['maxPeriods'] = value.round();
+                            await state.updateTimetable(timetable);
+                            setState(() {});
+                          }
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Slider(
-                    value: AppSettings.totalWeeks.toDouble(),
-                    min: 1,
-                    max: 30,
-                    divisions: 29,
-                    label: '${AppSettings.totalWeeks}',
-                    onChanged: (value) {
-                      if (mounted) {
-                        setState(() {
-                          AppSettings.saveTotalWeeks(value.round());
-                        });
-                      }
-                    },
-                  ),
-                ),
-                const Divider(),
-                SwitchListTile(
-                  title: const Text('是否显示周末'),
-                  subtitle: const Text('开启后将在课程表中显示周六和周日'),
-                  secondary: const Icon(Icons.weekend),
-                  value: AppSettings.showWeekend,
-                  onChanged: (value) async {
-                    await AppSettings.saveShowWeekend(value);
-                    
-                    if (mounted) {
-                      final state = context.read<ScheduleState>();
-                      state.toggleWeekend(value);
-                      setState(() {});
-                    }
-                  },
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Column(
-              children: [
-                ListTile(
+              ),
+              SizedBox(height: isSmallScreen ? 12 : 16),
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: ListTile(
                   leading: const Icon(Icons.schedule),
-                  title: const Text('课程节数'),
-                  subtitle: Text('${AppSettings.maxPeriods} 节'),
+                  title: Text('设置上课时间', style: TextStyle(fontSize: isSmallScreen ? 14 : 16)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _showTimeSettingsDialog,
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: Slider(
-                    value: AppSettings.maxPeriods.toDouble(),
-                    min: 1,
-                    max: 16,
-                    divisions: 15,
-                    label: '${AppSettings.maxPeriods}',
-                    onChanged: (value) {
-                      if (mounted) {
-                        setState(() {
-                          AppSettings.saveMaxPeriods(value.round());
-                        });
-                      }
-                    },
-                  ),
+              ),
+              SizedBox(height: isSmallScreen ? 12 : 16),
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: ListTile(
+                  leading: const Icon(Icons.info),
+                  title: Text('关于', style: TextStyle(fontSize: isSmallScreen ? 14 : 16)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _showAboutDialog,
                 ),
-                const Divider(),
-                ListTile(
-                  leading: const Icon(Icons.access_time),
-                  title: const Text('课程时间设置'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: _showTimeSettingsDialog,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          Card(
-            elevation: 3,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: const Text('关于'),
-              subtitle: const Text('查看应用信息'),
-              onTap: _showAboutDialog,
-            ),
-          ),
-        ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }

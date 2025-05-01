@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../data/settings.dart';
 import '../services/course_service.dart';
 import '../data/course.dart';
 import '../data/timetable.dart';
@@ -99,11 +98,76 @@ class ScheduleState extends ChangeNotifier {
   }
 
   Future<void> _loadSettings() async {
-    await AppSettings.init();
-    _currentWeek = AppSettings.currentWeek;
-    _selectedView = AppSettings.selectedView;
-    _showWeekend = AppSettings.showWeekend;
+    final timetable = currentTimetable;
+    if (timetable != null) {
+      // 解析开始日期
+      DateTime? startDate;
+      if (timetable.settings['startDate'] != null) {
+        try {
+          startDate = DateTime.parse(timetable.settings['startDate'].toString());
+        } catch (e) {
+          startDate = null;
+        }
+      }
+
+      // 自动计算当前周数
+      if (startDate != null) {
+        final now = DateTime.now();
+        final diff = now.difference(startDate).inDays;
+        _currentWeek = (diff ~/ 7) + 1;
+        if (_currentWeek < 1) _currentWeek = 1;
+        
+        final totalWeeks = timetable.settings['totalWeeks'] ?? 20;
+        if (_currentWeek > totalWeeks) _currentWeek = totalWeeks;
+        
+        timetable.settings['currentWeek'] = _currentWeek;
+      } else {
+        _currentWeek = int.tryParse(timetable.settings['currentWeek']?.toString() ?? '1') ?? 1;
+      }
+
+      _selectedView = timetable.settings['selectedView']?.toString() ?? '周视图';
+      
+      // 确保showWeekend设置存在且正确加载
+      if (timetable.settings['showWeekend'] == null) {
+        timetable.settings['showWeekend'] = false;
+      }
+      _showWeekend = timetable.settings['showWeekend'] is bool 
+          ? timetable.settings['showWeekend'] as bool
+          : timetable.settings['showWeekend']?.toString() == 'true';
+      
+      // 确保总周数和最大节数设置存在
+      if (timetable.settings['totalWeeks'] == null) {
+        timetable.settings['totalWeeks'] = 20;
+      }
+      if (timetable.settings['maxPeriods'] == null) {
+        timetable.settings['maxPeriods'] = 16;
+      }
+      
+      await CourseService.saveTimetables(_timetables);
+    } else {
+      _currentWeek = 1;
+      _selectedView = '周视图';
+      _showWeekend = false;
+    }
     notifyListeners();
+  }
+
+  Future<void> updateTotalWeeks(int weeks) async {
+    final timetable = currentTimetable;
+    if (timetable != null) {
+      timetable.settings['totalWeeks'] = weeks;
+      await CourseService.saveTimetables(_timetables);
+      notifyListeners();
+    }
+  }
+
+  Future<void> updateMaxPeriods(int periods) async {
+    final timetable = currentTimetable;
+    if (timetable != null) {
+      timetable.settings['maxPeriods'] = periods;
+      await CourseService.saveTimetables(_timetables);
+      notifyListeners();
+    }
   }
 
   /// 更新或添加课程
@@ -125,6 +189,15 @@ class ScheduleState extends ChangeNotifier {
   /// 4. 更新或添加课程
   /// 5. 持久化保存
   /// 6. 通知监听器
+  Future<void> updateTimetable(Timetable timetable) async {
+    final index = _timetables.indexWhere((t) => t.id == timetable.id);
+    if (index >= 0) {
+      _timetables[index] = timetable;
+      await CourseService.saveTimetables(_timetables);
+      notifyListeners();
+    }
+  }
+
   Future<void> updateCourse(Course course) async {
     final timetable = currentTimetable;
     if (timetable != null) {
@@ -177,25 +250,46 @@ class ScheduleState extends ChangeNotifier {
   }
 
   void changeWeek(int week) {
-    if (week >= 1 && week <= AppSettings.totalWeeks) {
-      _currentWeek = week;
-      AppSettings.saveWeekPreference(week);
-      notifyListeners();
+    final timetable = currentTimetable;
+    if (timetable != null) {
+      final totalWeeks = timetable.settings['totalWeeks'] ?? 20;
+      if (week >= 1 && week <= totalWeeks) {
+        _currentWeek = week;
+        timetable.settings['currentWeek'] = week;
+        CourseService.saveTimetables(_timetables);
+        notifyListeners();
+      }
     }
+  }
+
+  int get totalWeeks {
+    return currentTimetable?.settings['totalWeeks'] ?? 20;
+  }
+
+  int get maxPeriods {
+    return currentTimetable?.settings['maxPeriods'] ?? 16;
   }
 
   void changeView(String view) {
     if (_selectedView != view) {
       _selectedView = view;
-      AppSettings.saveViewPreference(view);
+      final timetable = currentTimetable;
+      if (timetable != null) {
+        timetable.settings['selectedView'] = view;
+        CourseService.saveTimetables(_timetables);
+      }
       notifyListeners();
     }
   }
 
   void toggleWeekend(bool show) {
     _showWeekend = show;
-    AppSettings.saveWeekendPreference(show);
-    notifyListeners();
+    final timetable = currentTimetable;
+    if (timetable != null) {
+      timetable.settings['showWeekend'] = show;
+      CourseService.saveTimetables(_timetables);
+      notifyListeners();
+    }
   }
 
   void selectDay(int day) {
@@ -234,6 +328,7 @@ class ScheduleState extends ChangeNotifier {
     if (_timetables.any((t) => t.id == id)) {
       _currentTimetableId = id;
       await CourseService.saveTimetables(_timetables);
+      await _loadSettings(); // 切换课表后重新加载设置
       notifyListeners();
     }
   }

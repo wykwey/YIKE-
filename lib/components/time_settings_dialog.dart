@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import '../data/settings.dart';
 
 class TimeSettingsDialog extends StatelessWidget {
   final Map<String, TextEditingController> controllers;
+  final Function(Map<String, String>)? onSave;
 
   const TimeSettingsDialog({
     super.key,
     required this.controllers,
+    this.onSave,
   });
 
   @override
@@ -25,9 +26,9 @@ class TimeSettingsDialog extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: List.generate(AppSettings.maxPeriods, (index) {
-              final period = (index + 1).toString();
-              final controller = controllers[period]!;
+            children: controllers.entries.map((entry) {
+              final period = entry.key;
+              final controller = entry.value;
               return Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Row(
@@ -65,7 +66,7 @@ class TimeSettingsDialog extends StatelessWidget {
                   ],
                 ),
               );
-            }),
+            }).toList(),
           ),
         ),
       ),
@@ -76,6 +77,13 @@ class TimeSettingsDialog extends StatelessWidget {
         ),
         ElevatedButton(
           onPressed: () {
+            final newTimes = <String, String>{};
+            for (var entry in controllers.entries) {
+              newTimes[entry.key] = entry.value.text;
+            }
+            if (onSave != null) {
+              onSave!(newTimes);
+            }
             Navigator.pop(context, true);
           },
           child: const Text('保存'),

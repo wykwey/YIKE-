@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../data/course.dart';
-import '../constants.dart';
+import '../constants/app_constants.dart';
 import '../utils/color_utils.dart';
 import '../components/course_edit_dialog.dart';
 import '../states/schedule_state.dart';
@@ -139,7 +139,9 @@ class _CourseCardState extends State<CourseCard> {
 
   @override
   Widget build(BuildContext context) {
-    final colorBar = ColorUtils.getCourseColor(widget.course.name);
+    final colorBar = widget.course.color != 0 
+        ? Color(widget.course.color) 
+        : ColorUtils.getCourseColor(widget.course.name);
     final bgColor = ColorUtils.getWeekColor(widget.course.schedules.first['weekPattern']);
     final schedulesText = widget.course.schedules.map((s) {
       final dayText = AppConstants.weekDays[s['day'] - 1];

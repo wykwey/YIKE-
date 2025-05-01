@@ -3,34 +3,9 @@ import '../data/timetable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
-/// 课程服务类
-///
-/// 提供课程相关的核心业务逻辑处理，包括:
-/// - 课程数据查询(按周/天/节次)
-/// - 课程数据持久化(保存/加载)
-/// - 课表管理(保存/加载)
-///
-/// 特性:
-/// - 所有方法均为静态方法
-/// - 使用SharedPreferences进行本地存储
-/// - 与ScheduleState配合使用
-///
-/// 注意:
-/// - 不包含状态管理逻辑
 /// - 不包含UI相关逻辑
 class CourseService {
-  /// 获取指定周数的课程列表
-  ///
-  /// 参数:
-  /// - week: 要查询的周数(1-20)
-  /// - allCourses: 所有课程列表
-  ///
-  /// 返回:
-  /// - List<Course>: 包含指定周数所有课程的列表
-  ///
-  /// 筛选逻辑:
-  /// - 使用Course.matchesWeekPattern检查每个课程的周数安排
-  /// - 只要课程在指定周数有任一时间段安排即包含在结果中
+
   static List<Course> getWeekCourses(int week, List<Course> allCourses) {
     return allCourses.where((course) {
       return course.schedules.any((schedule) {
@@ -39,19 +14,7 @@ class CourseService {
     }).toList();
   }
 
-  /// 获取指定周数和星期的课程
-  ///
-  /// 参数:
-  /// - week: 要查询的周数(1-20)
-  /// - day: 要查询的星期(1-7表示星期一到星期日)
-  /// - allCourses: 所有课程列表
-  ///
-  /// 返回:
-  /// - List<Course>: 包含指定周数和星期所有课程的列表
-  ///
-  /// 筛选逻辑:
-  /// - 同时匹配星期和周数安排
-  /// - 使用Course.matchesWeekPattern检查周数安排
+
   static List<Course> getDayCourses(int week, int day, List<Course> allCourses) {
     return allCourses.where((course) {
       return course.schedules.any((s) => 
@@ -104,7 +67,37 @@ class CourseService {
       final decoded = jsonDecode(timetablesJson) as List;
       return decoded.map((e) => Timetable.fromJson(e)).toList();
     }
-    return [];
+    return [
+      Timetable(
+        id: 'default',
+        name: '默认课表',
+        isDefault: true,
+        courses: [],
+        settings: {
+          'startDate': DateTime.now().toString(),
+          'totalWeeks': 20,
+          'maxPeriods': 16,
+          'periodTimes': {
+            '1': '08:00-08:45',
+            '2': '08:50-09:35',
+            '3': '09:40-10:25',
+            '4': '10:30-11:15',
+            '5': '11:20-12:05',
+            '6': '13:30-14:15',
+            '7': '14:20-15:05',
+            '8': '15:10-15:55',
+            '9': '16:00-16:45',
+            '10': '16:50-17:35',
+            '11': '18:30-19:15',
+            '12': '19:20-20:05',
+            '13': '20:10-20:55',
+            '14': '21:00-21:45',
+            '15': '21:50-22:35',
+            '16': '22:40-23:25'
+          }
+        }
+      )
+    ];
   }
 
   static Future<void> saveTimetables(List<Timetable> timetables) async {
