@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 
 class ColorUtils {
   static const Map<String, Color> courseColorMap = {
+    'math': Color(0xFF4285F4),
+    'english': Color(0xFFEA4335),
+    'physics': Color(0xFFFBBC05),
+    'chemistry': Color(0xFF34A853),
     'orange': Colors.orange,
     'green': Colors.green,
     'blue': Colors.blue,

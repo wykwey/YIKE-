@@ -5,12 +5,32 @@ import 'dart:convert';
 
 /// 课程服务类
 ///
-/// 提供课程相关的业务逻辑处理:
-/// - 按周获取课程
-/// - 按天获取课程
-/// - 课程时间冲突检测
+/// 提供课程相关的核心业务逻辑处理，包括:
+/// - 课程数据查询(按周/天/节次)
+/// - 课程数据持久化(保存/加载)
+/// - 课表管理(保存/加载)
+///
+/// 特性:
+/// - 所有方法均为静态方法
+/// - 使用SharedPreferences进行本地存储
+/// - 与ScheduleState配合使用
+///
+/// 注意:
+/// - 不包含状态管理逻辑
+/// - 不包含UI相关逻辑
 class CourseService {
   /// 获取指定周数的课程列表
+  ///
+  /// 参数:
+  /// - week: 要查询的周数(1-20)
+  /// - allCourses: 所有课程列表
+  ///
+  /// 返回:
+  /// - List<Course>: 包含指定周数所有课程的列表
+  ///
+  /// 筛选逻辑:
+  /// - 使用Course.matchesWeekPattern检查每个课程的周数安排
+  /// - 只要课程在指定周数有任一时间段安排即包含在结果中
   static List<Course> getWeekCourses(int week, List<Course> allCourses) {
     return allCourses.where((course) {
       return course.schedules.any((schedule) {
@@ -20,6 +40,18 @@ class CourseService {
   }
 
   /// 获取指定周数和星期的课程
+  ///
+  /// 参数:
+  /// - week: 要查询的周数(1-20)
+  /// - day: 要查询的星期(1-7表示星期一到星期日)
+  /// - allCourses: 所有课程列表
+  ///
+  /// 返回:
+  /// - List<Course>: 包含指定周数和星期所有课程的列表
+  ///
+  /// 筛选逻辑:
+  /// - 同时匹配星期和周数安排
+  /// - 使用Course.matchesWeekPattern检查周数安排
   static List<Course> getDayCourses(int week, int day, List<Course> allCourses) {
     return allCourses.where((course) {
       return course.schedules.any((s) => 

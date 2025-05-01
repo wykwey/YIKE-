@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../data/settings.dart';
 import '../states/schedule_state.dart';
+import '../components/time_settings_dialog.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -12,7 +13,9 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  void _pickStartDate() async {
+  Future<void> _pickStartDate() async {
+    if (!mounted) return;
+    
     final picked = await showDatePicker(
       context: context,
       initialDate: AppSettings.startDate,
@@ -22,71 +25,39 @@ class _SettingsPageState extends State<SettingsPage> {
       cancelText: '取消',
       confirmText: '确定',
     );
-    if (picked != null) {
-      setState(() {
-        AppSettings.saveStartDate(picked);
-      });
+    
+    if (picked != null && mounted) {
+      await AppSettings.saveStartDate(picked);
+      setState(() {});
     }
   }
 
-  void _showTimeSettingsDialog() {
+  Future<void> _showTimeSettingsDialog() async {
+    if (!mounted) return;
+    
     final controllers = Map.fromEntries(
-      AppSettings.periodTimes.entries.map((e) => 
-        MapEntry(e.key, TextEditingController(text: e.value)))
-    );
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('课程时间设置'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var entry in controllers.entries)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      Text('第${entry.key}节:'),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: entry.value,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              final newTimes = Map.fromEntries(
-                controllers.entries.map((e) => 
-                  MapEntry(e.key, e.value.text))
-              );
-              AppSettings.savePeriodTimes(newTimes);
-              Navigator.pop(context);
-              setState(() {});
-            },
-            child: const Text('保存'),
-          ),
-        ],
+      AppSettings.periodTimes.entries.map(
+        (e) => MapEntry(e.key, TextEditingController(text: e.value)),
       ),
     );
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => TimeSettingsDialog(controllers: controllers),
+    );
+
+    if (result == true && mounted) {
+      final newTimes = Map.fromEntries(
+        controllers.entries.map((e) => MapEntry(e.key, e.value.text)),
+      );
+      await AppSettings.savePeriodTimes(newTimes);
+      setState(() {});
+    }
   }
 
   void _showAboutDialog() {
+    if (!mounted) return;
+    
     showAboutDialog(
       context: context,
       applicationName: '课程表应用',
@@ -135,11 +106,16 @@ class _SettingsPageState extends State<SettingsPage> {
                       AppSettings.selectedView == '列表视图'
                     ],
                     onPressed: (index) async {
+                      if (!mounted) return;
+                      
                       final view = index == 0 ? '周视图' : index == 1 ? '日视图' : '列表视图';
                       await AppSettings.saveViewPreference(view);
-                      final state = context.read<ScheduleState>();
-                      state.changeView(view);
-                      setState(() {});
+                      
+                      if (mounted) {
+                        final state = context.read<ScheduleState>();
+                        state.changeView(view);
+                        setState(() {});
+                      }
                     },
                     children: const [
                       Padding(padding: EdgeInsets.symmetric(horizontal: 8), child: Text('周')),
@@ -179,9 +155,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     divisions: 29,
                     label: '${AppSettings.totalWeeks}',
                     onChanged: (value) {
-                      setState(() {
-                        AppSettings.saveTotalWeeks(value.round());
-                      });
+                      if (mounted) {
+                        setState(() {
+                          AppSettings.saveTotalWeeks(value.round());
+                        });
+                      }
                     },
                   ),
                 ),
@@ -193,9 +171,12 @@ class _SettingsPageState extends State<SettingsPage> {
                   value: AppSettings.showWeekend,
                   onChanged: (value) async {
                     await AppSettings.saveShowWeekend(value);
-                    final state = context.read<ScheduleState>();
-                    state.toggleWeekend(value);
-                    setState(() {});
+                    
+                    if (mounted) {
+                      final state = context.read<ScheduleState>();
+                      state.toggleWeekend(value);
+                      setState(() {});
+                    }
                   },
                 ),
               ],
@@ -221,9 +202,11 @@ class _SettingsPageState extends State<SettingsPage> {
                     divisions: 15,
                     label: '${AppSettings.maxPeriods}',
                     onChanged: (value) {
-                      setState(() {
-                        AppSettings.saveMaxPeriods(value.round());
-                      });
+                      if (mounted) {
+                        setState(() {
+                          AppSettings.saveMaxPeriods(value.round());
+                        });
+                      }
                     },
                   ),
                 ),

@@ -5,15 +5,9 @@ import '../services/course_service.dart';
 import '../utils/color_utils.dart';
 import 'package:provider/provider.dart';
 import '../components/course_edit_dialog.dart';
+import '../components/time_settings_dialog.dart';
 import '../states/schedule_state.dart';
 
-/// 周视图组件
-///
-/// 显示一周的课程安排表格视图
-/// 包含:
-/// - 节数纵轴
-/// - 星期横轴
-/// - 课程卡片展示
 class WeekView extends StatelessWidget {
   final int currentWeek;
   final int maxPeriods;
@@ -63,12 +57,12 @@ class WeekView extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: List.generate(showWeekend ? 7 : 5, (dayIndex) {
                           int day = dayIndex + 1;
-          var course = CourseService.getPeriodCourse(
-            currentWeek,
-            day,
-            index + 1,
-            currentCourses
-          ) ?? Course.empty();
+                          var course = CourseService.getPeriodCourse(
+                            currentWeek,
+                            day,
+                            index + 1,
+                            currentCourses
+                          );
                           return Expanded(child: _buildCourseCell(course, context));
                         }),
                       ),
@@ -88,7 +82,17 @@ class WeekView extends StatelessWidget {
     final times = timeText.split('-');
     
     return InkWell(
-      onTap: () => AppSettings.showTimeSettingsDialog(context),
+      onTap: () => showDialog(
+        context: context,
+        builder: (context) {
+          final controllers = <String, TextEditingController>{};
+          for (var i = 1; i <= AppSettings.maxPeriods; i++) {
+            controllers[i.toString()] = TextEditingController(
+              text: AppSettings.periodTimes[i.toString()]);
+          }
+          return TimeSettingsDialog(controllers: controllers);
+        },
+      ),
       child: Container(
         margin: const EdgeInsets.only(right: 8),
         decoration: BoxDecoration(
@@ -98,60 +102,83 @@ class WeekView extends StatelessWidget {
         ),
         alignment: Alignment.center,
         child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('第$period节', 
-              style: TextStyle(
-                fontWeight: FontWeight.bold, 
-                fontSize: 14,
-                color: Theme.of(context).primaryColorDark
-              )),
-          const SizedBox(height: 4),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(times[0], 
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).primaryColor
-                  )),
-              Text('——', 
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).primaryColor,
-                    fontWeight: FontWeight.bold
-                  )),
-              Text(times.length > 1 ? times[1] : '', 
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).primaryColor
-                  )),
-            ],
-          ),
-        ],
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text('第$period节', 
+                style: TextStyle(
+                  fontWeight: FontWeight.bold, 
+                  fontSize: 14,
+                  color: Theme.of(context).primaryColorDark
+                )),
+            const SizedBox(height: 4),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(times[0], 
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).primaryColor
+                    )),
+                Text('——', 
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).primaryColor,
+                      fontWeight: FontWeight.bold
+                    )),
+                Text(times.length > 1 ? times[1] : '', 
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).primaryColor
+                    )),
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
     );
   }
 
   Widget _buildCourseCell(Course course, BuildContext context) {
+    /// 刷新课程表状态
+    /// 
+    /// 通过更新一个空的课程对象来触发状态更新，
+    /// 这样可以避免直接调用protected的notifyListeners方法
+    void refreshScheduleState(BuildContext context) {
+      final state = Provider.of<ScheduleState>(context, listen: false);
+      final emptyCourse = Course.empty(); // 移除const
+      state.updateCourse(emptyCourse);
+    }
+
+    /// 处理课程编辑完成后的回调
+    /// 
+    /// 参数:
+    /// - saved: 是否保存了修改
+    /// 
+    /// 功能:
+    /// 1. 检查context是否仍然mounted
+    /// 2. 通过更新空课程触发状态刷新
+    /// 3. 避免直接调用notifyListeners
+    void handleEditComplete(dynamic saved) {
+      if (saved == true && context.mounted) {
+        refreshScheduleState(context);
+      }
+    }
+
     if (course.isEmpty) {
       return InkWell(
         onTap: () {
           showDialog(
-                  context: context,
-                  builder: (context) {
-                    final state = Provider.of<ScheduleState>(context, listen: false);
-                    return CourseEditDialog(
-                      course: course.copyWith(),
-                      onSave: (updatedCourse) async {
-                        await state.updateCourse(updatedCourse);
-                      },
-                    );
-                  },
-                ).then((_) {
-                  Provider.of<ScheduleState>(context, listen: false).notifyListeners();
-                });
+            context: context,
+            builder: (context) {
+              final state = Provider.of<ScheduleState>(context, listen: false);
+              return CourseEditDialog(
+                course: course.copyWith(),
+                onSave: (updatedCourse) async {
+                  await state.updateCourse(updatedCourse);
+                },
+              );
+            },
+          ).then(handleEditComplete);
         },
         child: Container(
           margin: const EdgeInsets.all(2),
@@ -170,13 +197,16 @@ class WeekView extends StatelessWidget {
       onTap: () {
         showDialog(
           context: context,
-          builder: (context) => CourseEditDialog(
-            course: course,
-            onSave: (updatedCourse) {
-              // TODO: 实现课程更新逻辑
-            },
-          ),
-        );
+          builder: (context) {
+            final state = Provider.of<ScheduleState>(context, listen: false);
+            return CourseEditDialog(
+              course: course,
+              onSave: (updatedCourse) async {
+                await state.updateCourse(updatedCourse);
+              },
+            );
+          },
+        ).then(handleEditComplete);
       },
       child: Container(
         margin: const EdgeInsets.all(2),

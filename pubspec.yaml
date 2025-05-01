@@ -1,4 +1,4 @@
-name: class_schedule
+name: yiclass
 description: A Flutter class schedule application
 
 version: 1.0.0+1
@@ -8,8 +8,6 @@ environment:
 
 dependencies:
   flutter:
-    sdk: flutter
-  flutter_localizations:
     sdk: flutter
   provider: ^6.0.5
   shared_preferences: ^2.2.2

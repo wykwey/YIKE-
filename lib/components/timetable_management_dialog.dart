@@ -12,44 +12,54 @@ class TimetableManagementDialog extends StatelessWidget {
     final textController = TextEditingController();
 
     return AlertDialog(
-      title: const Text('课表管理'),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: const Text('课表管理', style: TextStyle(fontWeight: FontWeight.bold)),
       content: SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.6,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Column(
-                children: state.timetables.map((timetable) {
-                  return ListTile(
-                    title: Text(timetable.name),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (timetable.id == state.currentTimetableId)
-                          const Icon(Icons.check, color: Colors.green),
-                        if (!timetable.isDefault)
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () => state.removeTimetable(timetable.id),
-                          ),
-                      ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.6,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ...state.timetables.map((timetable) {
+                  return Card(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 2,
+                    margin: const EdgeInsets.symmetric(vertical: 6),
+                    child: ListTile(
+                      title: Text(timetable.name),
+                      leading: const Icon(Icons.calendar_today_outlined, color: Colors.blueAccent),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (timetable.id == state.currentTimetableId)
+                            const Icon(Icons.check_circle, color: Colors.green),
+                          if (!timetable.isDefault)
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () => state.removeTimetable(timetable.id),
+                            ),
+                        ],
+                      ),
+                      onTap: () => state.switchTimetable(timetable.id),
                     ),
-                    onTap: () => state.switchTimetable(timetable.id),
                   );
                 }).toList(),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: textController,
-                decoration: const InputDecoration(
-                  labelText: '新课表名称',
-                  border: OutlineInputBorder(),
+                const Divider(height: 32),
+                TextField(
+                  controller: textController,
+                  decoration: const InputDecoration(
+                    labelText: '新课表名称',
+                    hintText: '输入名称如：大一上学期',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.edit),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -58,12 +68,13 @@ class TimetableManagementDialog extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
           child: const Text('取消'),
         ),
-        TextButton(
+        FilledButton(
           onPressed: () {
-            if (textController.text.isNotEmpty) {
+            final name = textController.text.trim();
+            if (name.isNotEmpty) {
               state.addTimetable(Timetable(
                 id: DateTime.now().millisecondsSinceEpoch.toString(),
-                name: textController.text,
+                name: name,
                 courses: [],
               ));
               Navigator.pop(context);

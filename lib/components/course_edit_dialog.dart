@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import '../data/course.dart';
-import '../states/schedule_state.dart';
 import '../utils/color_utils.dart';
 
 class CourseEditDialog extends StatefulWidget {
@@ -24,8 +22,8 @@ class _CourseEditDialogState extends State<CourseEditDialog> {
   late TextEditingController _locationController;
   late TextEditingController _teacherController;
   late Color _selectedColor;
-  late List<TextEditingController> _weekPatternControllers = [];
-  late List<TextEditingController> _periodsControllers = [];
+  late List<TextEditingController> _weekPatternControllers;
+  late List<TextEditingController> _periodsControllers;
 
   @override
   void initState() {
@@ -35,14 +33,14 @@ class _CourseEditDialogState extends State<CourseEditDialog> {
     _locationController = TextEditingController(text: _editingCourse.location);
     _teacherController = TextEditingController(text: _editingCourse.teacher);
     _selectedColor = ColorUtils.getCourseColor(_editingCourse.name);
-    
-    // 初始化控制器
+
     _weekPatternControllers = _editingCourse.schedules.map((schedule) {
       return TextEditingController(text: schedule['weekPattern'] ?? '');
     }).toList();
-    
+
     _periodsControllers = _editingCourse.schedules.map((schedule) {
-      return TextEditingController(text: (schedule['periods'] as List).join('-'));
+      return TextEditingController(
+          text: (schedule['periods'] as List).join('-'));
     }).toList();
   }
 
@@ -60,131 +58,199 @@ class _CourseEditDialogState extends State<CourseEditDialog> {
     super.dispose();
   }
 
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon),
+      filled: true,
+      fillColor: Colors.grey.shade100,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 20, bottom: 6),
+        child: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(_editingCourse.name.isEmpty ? '添加课程' : '编辑课程'),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(
+        _editingCourse.name.isEmpty ? '添加课程' : '编辑课程',
+        style: const TextStyle(fontWeight: FontWeight.bold),
+      ),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('课程基本信息', style: TextStyle(fontWeight: FontWeight.bold)),
-            TextField(
+            _sectionTitle('课程基本信息'),
+            TextFormField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: '课程名称'),
+              decoration: _inputDecoration('课程名称', Icons.book),
             ),
-            TextField(
+            const SizedBox(height: 12),
+            TextFormField(
               controller: _locationController,
-              decoration: const InputDecoration(labelText: '上课地点'),
+              decoration: _inputDecoration('上课地点', Icons.location_on),
             ),
-            TextField(
+            const SizedBox(height: 12),
+            TextFormField(
               controller: _teacherController,
-              decoration: const InputDecoration(labelText: '授课教师'),
+              decoration: _inputDecoration('授课教师', Icons.person),
             ),
-            const SizedBox(height: 16),
-            const Text('课程时间信息', style: TextStyle(fontWeight: FontWeight.bold)),
+            _sectionTitle('课程时间信息'),
             ..._editingCourse.schedules.asMap().entries.map((entry) {
               final index = entry.key;
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+              return Card(
+                margin: const EdgeInsets.symmetric(vertical: 6),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: DropdownButton<int>(
-                          value: _editingCourse.schedules[index]['day'],
-                          items: List.generate(7, (i) => i+1).map((day) => 
-                            DropdownMenuItem(
-                              value: day,
-                              child: Text('星期${['一','二','三','四','五','六','日'][day-1]}'),
-                            )).toList(),
-                          onChanged: (day) {
-                            if (day == null) return;
+                      const Text(
+                        '星期',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<int>(
+                        value: _editingCourse.schedules[index]['day'],
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.calendar_today),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                        ),
+                        items: List.generate(7, (i) => i + 1).map((day) {
+                          return DropdownMenuItem(
+                            value: day,
+                            child: Text('星期${['一','二','三','四','五','六','日'][day - 1]}'),
+                          );
+                        }).toList(),
+                        onChanged: (day) {
+                          if (day == null) return;
+                          setState(() {
+                            _editingCourse.schedules[index]['day'] = day;
+                          });
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        '节次',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _periodsControllers[index],
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.access_time),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                        ),
+                        onChanged: (value) {
+                          try {
+                            final periods = value
+                                .split('-')
+                                .where((e) => e.isNotEmpty)
+                                .map((e) => int.tryParse(e))
+                                .where((e) => e != null)
+                                .map((e) => e!)
+                                .toList();
+                            if (periods.isNotEmpty) {
+                              _editingCourse.schedules[index]['periods'] = periods;
+                            }
+                          } catch (_) {}
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        '周数',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _weekPatternControllers[index],
+                        decoration: InputDecoration(
+                          prefixIcon: const Icon(Icons.date_range),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          filled: true,
+                          fillColor: Colors.grey.shade100,
+                        ),
+                        onChanged: (value) {
+                          _editingCourse.schedules[index]['weekPattern'] = value;
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
                             setState(() {
-                              _editingCourse.schedules[index]['day'] = day;
+                              _editingCourse.schedules.removeAt(index);
+                              _weekPatternControllers.removeAt(index);
+                              _periodsControllers.removeAt(index);
                             });
                           },
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.delete),
-                        onPressed: () {
-                          setState(() {
-                            _editingCourse.schedules.removeAt(index);
-                            _weekPatternControllers.removeAt(index);
-                            _periodsControllers.removeAt(index);
-                          });
-                        },
-                      ),
                     ],
                   ),
-                  TextField(
-                    decoration: const InputDecoration(labelText: '节次 (如:1-3)'),
-                    controller: _periodsControllers[index],
-                    onChanged: (value) {
-                      try {
-                        final periods = value.split('-')
-                          .where((e) => e.isNotEmpty)
-                          .map((e) => int.tryParse(e))
-                          .where((e) => e != null)
-                          .map((e) => e!)
-                          .toList();
-                        if (periods.isNotEmpty) {
-                          _editingCourse.schedules[index]['periods'] = periods;
-                        }
-                      } catch (e) {
-                        // 忽略格式错误
-                      }
-                    },
-                  ),
-                  TextField(
-                    decoration: const InputDecoration(labelText: '周数 (如:1-16或1,3,5)'),
-                    controller: _weekPatternControllers[index],
-                    textDirection: TextDirection.ltr,
-                    onChanged: (value) {
-                      _editingCourse.schedules[index]['weekPattern'] = value;
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                ],
+                ),
               );
             }),
-            ElevatedButton(
+            const SizedBox(height: 8),
+            ElevatedButton.icon(
               onPressed: () {
                 setState(() {
                   _editingCourse.schedules.add({
                     'day': 1,
                     'periods': [1],
-                    'weekPattern': '1-16'
+                    'weekPattern': '1-16',
                   });
                   _weekPatternControllers.add(TextEditingController(text: '1-16'));
                   _periodsControllers.add(TextEditingController(text: '1'));
                 });
               },
-              child: const Text('添加时间安排'),
+              icon: const Icon(Icons.add),
+              label: const Text('添加时间安排'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+              ),
             ),
-            const SizedBox(height: 16),
-            const Text('课程显示设置', style: TextStyle(fontWeight: FontWeight.bold)),
-            DropdownButton<Color>(
-              value: _selectedColor,
-              items: ColorUtils.courseColors.map((color) {
-                return DropdownMenuItem(
-                  value: color,
-                  child: Container(
-                    width: 100,
-                    height: 20,
-                    color: color,
+            _sectionTitle('课程显示设置'),
+            Wrap(
+              spacing: 10,
+              children: ColorUtils.courseColors.map((color) {
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedColor = color;
+                    });
+                  },
+                  child: CircleAvatar(
+                    backgroundColor: color,
+                    radius: 16,
+                    child: _selectedColor == color
+                        ? const Icon(Icons.check, color: Colors.white, size: 16)
+                        : null,
                   ),
                 );
               }).toList(),
-              onChanged: (color) {
-                if (color != null) {
-                  setState(() {
-                    _selectedColor = color;
-                  });
-                }
-              },
             ),
           ],
         ),
@@ -194,21 +260,31 @@ class _CourseEditDialogState extends State<CourseEditDialog> {
           onPressed: () => Navigator.pop(context),
           child: const Text('取消'),
         ),
-        TextButton(
+        ElevatedButton(
           onPressed: () async {
             final updatedCourse = _editingCourse.copyWith(
               name: _nameController.text,
               location: _locationController.text,
               teacher: _teacherController.text,
-              color: _selectedColor.value,
+              color: _selectedColor.toARGB32(),
             );
+            
+            if (!mounted) return;
+            
             try {
-              await widget.onSave(updatedCourse);
-              if (mounted) Navigator.pop(context, updatedCourse);
+              final shouldPop = await widget.onSave(updatedCourse);
+              if (!mounted) return;
+              
+              if (shouldPop && mounted) {
+                Navigator.pop(context, true);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('课程保存成功')),
+                );
+              }
             } catch (e) {
               if (mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(e.toString()))
+                  SnackBar(content: Text(e.toString())),
                 );
               }
             }

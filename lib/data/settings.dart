@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
 import '../data/course.dart';
+import '../components/time_settings_dialog.dart';
 
 class AppSettings {
   static List<Course> allCourses = [];
@@ -106,60 +107,23 @@ class AppSettings {
     await prefs.setString('periodTimes', jsonEncode(times));
   }
 
-  static void showTimeSettingsDialog(BuildContext context) {
+  static Future<void> showTimeSettingsDialog(BuildContext context) async {
     final controllers = Map.fromEntries(
       periodTimes.entries
         .where((e) => int.parse(e.key) <= maxPeriods)
         .map((e) => MapEntry(e.key, TextEditingController(text: e.value)))
     );
 
-    showDialog(
+    final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('课程时间设置'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var entry in controllers.entries)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      Text('第${entry.key}节:'),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextField(
-                          controller: entry.value,
-                          decoration: const InputDecoration(
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              final newTimes = Map.fromEntries(
-                controllers.entries.map((e) => 
-                  MapEntry(e.key, e.value.text))
-              );
-              savePeriodTimes(newTimes);
-              Navigator.pop(context);
-            },
-            child: const Text('保存'),
-          ),
-        ],
-      ),
+      builder: (context) => TimeSettingsDialog(controllers: controllers),
     );
+
+    if (result == true) {
+      final newTimes = Map.fromEntries(
+        controllers.entries.map((e) => MapEntry(e.key, e.value.text)),
+      );
+      await savePeriodTimes(newTimes);
+    }
   }
 }

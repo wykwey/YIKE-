@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../data/course.dart';
 import '../constants.dart';
 import '../utils/color_utils.dart';
+import '../components/course_edit_dialog.dart';
+import '../states/schedule_state.dart';
 
 /// 列表视图组件
 ///
@@ -102,21 +105,50 @@ class CourseListView extends StatelessWidget {
   }
 }
 
-class CourseCard extends StatelessWidget {
+class CourseCard extends StatefulWidget {
   final Course course;
 
   const CourseCard({super.key, required this.course});
 
   @override
+  State<CourseCard> createState() => _CourseCardState();
+}
+
+class _CourseCardState extends State<CourseCard> {
+  Future<void> _handleEditCourse() async {
+    if (!mounted) return;
+    
+    final editedCourse = await showDialog<Course>(
+      context: context,
+      builder: (context) => CourseEditDialog(
+        course: widget.course,
+        onSave: (editedCourse) async {
+          if (!mounted) return false;
+          final state = Provider.of<ScheduleState>(context, listen: false);
+          await state.updateCourse(editedCourse);
+          return true;
+        },
+      ),
+    );
+    
+    if (editedCourse != null && mounted) {
+      final state = Provider.of<ScheduleState>(context, listen: false);
+      await state.updateCourse(editedCourse);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final colorBar = ColorUtils.getCourseColor(course.name);
-    final bgColor = ColorUtils.getWeekColor(course.schedules.first['weekPattern']);
-    final schedulesText = course.schedules.map((s) {
+    final colorBar = ColorUtils.getCourseColor(widget.course.name);
+    final bgColor = ColorUtils.getWeekColor(widget.course.schedules.first['weekPattern']);
+    final schedulesText = widget.course.schedules.map((s) {
       final dayText = AppConstants.weekDays[s['day'] - 1];
       return '$dayText 第${s['periods'].join(',')}节';
     }).join('\n');
 
-    return Container(
+    return GestureDetector(
+      onTap: _handleEditCourse,
+      child: Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -141,14 +173,14 @@ class CourseCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: bgColor.withOpacity(0.07),
+              color: bgColor.withAlpha((0.07 * 255).round()),
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(12)),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  course.name,
+                  widget.course.name,
                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 6),
@@ -158,17 +190,18 @@ class CourseCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  '教师: ${course.teacher}',
+                  '教师: ${widget.course.teacher}',
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
                 Text(
-                  '地点: ${course.location}',
+                  '地点: ${widget.course.location}',
                   style: TextStyle(fontSize: 12, color: Colors.grey[700]),
                 ),
               ],
             ),
           ),
         ],
+      ),
       ),
     );
   }

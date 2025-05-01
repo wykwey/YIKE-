@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../data/course.dart';
 import '../services/course_service.dart';
 import '../constants.dart';
+import '../components/course_edit_dialog.dart';
+import '../states/schedule_state.dart';
 
 /// 日视图组件
 ///
@@ -122,6 +125,28 @@ class _DayViewState extends State<DayView> {
     );
   }
 
+  Future<void> _handleEditCourse(Course course) async {
+    if (!mounted) return;
+    
+    final editedCourse = await showDialog<Course>(
+      context: context,
+      builder: (context) => CourseEditDialog(
+        course: course,
+        onSave: (editedCourse) async {
+          if (!mounted) return false;
+          final state = Provider.of<ScheduleState>(context, listen: false);
+          await state.updateCourse(editedCourse);
+          return true;
+        },
+      ),
+    );
+    
+    if (editedCourse != null && mounted) {
+      final state = Provider.of<ScheduleState>(context, listen: false);
+      await state.updateCourse(editedCourse);
+    }
+  }
+
   Widget _buildCourseCard(Course course) {
     final schedule = course.schedules.firstWhere(
       (s) => s['day'] == selectedDay,
@@ -139,26 +164,29 @@ class _DayViewState extends State<DayView> {
         final padding = large ? 16.0 : 12.0;
         final borderWidth = large ? 5.0 : 4.0;
 
-        return Container(
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: EdgeInsets.all(padding),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border(left: BorderSide(color: borderColor, width: borderWidth)),
-            boxShadow: const [
-              BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
-            ],
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(course.name, style: TextStyle(fontSize: titleSize, fontWeight: FontWeight.bold)),
-              SizedBox(height: large ? 8 : 6),
-              Text(timeText, style: TextStyle(fontSize: detailSize, color: Colors.deepPurple)),
-              Text('教师: ${course.teacher}', style: TextStyle(fontSize: detailSize, color: Colors.grey)),
-              Text('地点: ${course.location}', style: TextStyle(fontSize: detailSize, color: Colors.grey)),
-            ],
+        return GestureDetector(
+          onTap: () => _handleEditCourse(course),
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 6),
+            padding: EdgeInsets.all(padding),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border(left: BorderSide(color: borderColor, width: borderWidth)),
+              boxShadow: const [
+                BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(course.name, style: TextStyle(fontSize: titleSize, fontWeight: FontWeight.bold)),
+                SizedBox(height: large ? 8 : 6),
+                Text(timeText, style: TextStyle(fontSize: detailSize, color: Colors.deepPurple)),
+                Text('教师: ${course.teacher}', style: TextStyle(fontSize: detailSize, color: Colors.grey)),
+                Text('地点: ${course.location}', style: TextStyle(fontSize: detailSize, color: Colors.grey)),
+              ],
+            ),
           ),
         );
       },

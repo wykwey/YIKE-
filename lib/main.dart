@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'components/bottom_nav_bar.dart';
 import 'data/settings.dart';
 import 'constants/app_constants.dart';
-import 'constants/ui_constants.dart';
 import 'views/week_view.dart';
 import 'views/day_view.dart';
 import 'views/list_view.dart';
@@ -13,7 +11,16 @@ import 'states/schedule_state.dart';
 
 /// 应用入口函数
 /// 
-/// 初始化应用设置并启动Flutter应用
+/// 主要功能：
+/// 1. 初始化Flutter引擎绑定(WidgetsFlutterBinding)
+/// 2. 初始化应用设置(AppSettings.init)
+/// 3. 配置全局状态管理(使用MultiProvider)
+///    - ScheduleState: 管理课程表相关状态
+/// 4. 启动应用(runApp)
+///
+/// 注意：
+/// - 必须使用async/await确保初始化完成
+/// - WidgetsFlutterBinding.ensureInitialized()是运行Flutter应用的必要前提
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await AppSettings.init();
@@ -31,7 +38,13 @@ void main() async {
 
 /// 应用根组件
 /// 
-/// 配置全局主题、本地化和路由设置
+/// 负责配置应用的全局设置，包括：
+/// - 主题样式(字体、颜色方案)
+/// - 本地化支持(中文)
+/// - 路由导航设置
+/// - 调试标志控制
+/// 
+/// 使用MaterialApp作为基础框架，集成所有子组件
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -44,14 +57,6 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      localizationsDelegates: const [
-        GlobalMaterialLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-      ],
-      supportedLocales: const [
-        Locale('zh', 'CN'),
-      ],
       home: const CourseScheduleScreen(),
     );
   }
@@ -59,14 +64,28 @@ class MyApp extends StatelessWidget {
 
 /// 课程表主界面
 ///
-/// 包含顶部导航栏、周数切换和三种视图切换功能
+/// 主要功能包括：
+/// - 顶部导航栏：显示当前周数、周数切换按钮、设置按钮
+/// - 三种视图切换：周视图、日视图、列表视图
+/// - 周视图：显示一周课程表格
+/// - 日视图：显示单日课程详情
+/// - 列表视图：显示所有课程列表
+///
+/// 状态管理：
+/// - 通过ScheduleState管理当前周数、视图类型等状态
+/// - 使用Provider进行状态共享
+///
+/// 布局结构：
+/// 1. AppBar - 顶部导航栏
+/// 2. Body - 根据当前视图类型显示不同内容
+/// 3. BottomNavigationBar - 底部导航栏
 class CourseScheduleScreen extends StatelessWidget {
   const CourseScheduleScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<ScheduleState>();
-    final weekDays = AppConstants.weekDays;
+    const weekDays = AppConstants.weekDays;
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -78,14 +97,14 @@ class CourseScheduleScreen extends StatelessWidget {
             IconButton(
               icon: Icon(Icons.chevron_left, 
                 size: 28, 
-                color: state.currentWeek > 1 ? Colors.white : Colors.white.withOpacity(0.3)),
+                color: state.currentWeek > 1 ? const Color(0xFFFFFFFF) : const Color.fromRGBO(255, 255, 255, 0.3)),
               onPressed: state.currentWeek > 1 ? () => state.changeWeek(state.currentWeek - 1) : null,
             ),
             Center(child: Text('第${state.currentWeek}周', style: const TextStyle(fontSize: 16))),
             IconButton(
               icon: Icon(Icons.chevron_right,
                 size: 28,
-                color: state.currentWeek < AppSettings.totalWeeks ? Colors.white : Colors.white.withOpacity(0.3)),
+                color: state.currentWeek < AppSettings.totalWeeks ? const Color(0xFFFFFFFF) : const Color.fromRGBO(255, 255, 255, 0.3)),
               onPressed: state.currentWeek < AppSettings.totalWeeks 
                 ? () => state.changeWeek(state.currentWeek + 1) 
                 : null,
