@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../states/schedule_state.dart';
 import '../data/timetable.dart';
+import 'import_timetable_dialog.dart';
 
 class TimetableManagementDialog extends StatelessWidget {
   const TimetableManagementDialog({super.key});
@@ -67,6 +68,15 @@ class TimetableManagementDialog extends StatelessWidget {
         TextButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('取消'),
+        ),
+        OutlinedButton(
+          onPressed: () {
+            showDialog(
+              context: context,
+              builder: (context) => const ImportTimetableDialog(),
+            );
+          },
+          child: const Text('导入'),
         ),
         FilledButton(
           onPressed: () {

@@ -1,0 +1,38 @@
+{
+  "id": "example-1",
+  "name": "示例课表",
+  "courses": [
+    {
+      "id": "math101",
+      "name": "高等数学",
+      "location": "A101",
+      "teacher": "王教授",
+      "color": "orange",
+      "schedules": [
+        {
+          "day": 1,
+          "periods": [1, 2],
+          "weekPattern": "1-16"
+        },
+        {
+          "day": 3,
+          "periods": [3, 4],
+          "weekPattern": "1-16"
+        }
+      ]
+    },
+    {
+      "id": "eng201",
+      "name": "大学英语",
+      "location": "B205",
+      "teacher": "李老师",
+      "schedules": [
+        {
+          "day": 2,
+          "periods": [5, 6],
+          "weekPattern": "1-8,10-16"
+        }
+      ]
+    }
+  ]
+}

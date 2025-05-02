@@ -27,4 +27,9 @@ class ColorUtils {
     final week = int.tryParse(weekPattern.split(',').first) ?? 1;
     return week % 2 == 0 ? Colors.grey[100]! : Colors.white;
   }
+
+  static Color getRandomColor([String? seed]) {
+    final index = (seed?.hashCode ?? DateTime.now().millisecondsSinceEpoch) % courseColors.length;
+    return courseColors[index];
+  }
 }

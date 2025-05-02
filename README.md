@@ -33,8 +33,8 @@ TODO: 添加应用截图
 
 ### 安装步骤
 ```bash
-git clone https://github.com/wykwey/YIKE-.git
-cd YIKE-
+git clone https://github.com/wykwey/YIClass.git
+cd YIClass
 flutter pub get
 flutter run
 ```

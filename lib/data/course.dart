@@ -1,4 +1,6 @@
 
+import '../utils/color_utils.dart';
+
 class Course {
 
   static bool matchesWeekPattern(int week, String pattern) {
@@ -47,7 +49,9 @@ class Course {
       name: json['name'],
       location: json['location'],
       teacher: json['teacher'],
-      color: json['color'],
+      color: (json['color'] is String && ColorUtils.courseColorMap.containsKey(json['color']))
+          ? ColorUtils.courseColorMap[json['color']]!.value
+          : (json['color'] is int ? json['color'] : 0),
       schedules: List<Map<String, dynamic>>.from(json['schedules']),
     );
   }
@@ -63,7 +67,7 @@ class Course {
   final String teacher;
 
 
-  final int color;
+  int color;
 
   List<Map<String, dynamic>> schedules;
 
