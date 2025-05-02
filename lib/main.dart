@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'components/bottom_nav_bar.dart';
-import 'constants/app_constants.dart';
 import 'views/week_view.dart';
 import 'views/day_view.dart';
 import 'views/list_view.dart';

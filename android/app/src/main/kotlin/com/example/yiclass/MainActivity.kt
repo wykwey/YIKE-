@@ -1,4 +1,4 @@
-package com.example.class_schedule
+package com.example.yiclass
 
 import io.flutter.embedding.android.FlutterActivity
 
