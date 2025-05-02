@@ -3,67 +3,24 @@ import '../services/course_service.dart';
 import '../data/course.dart';
 import '../data/timetable.dart';
 
-/// 课程表状态管理类
-///
-/// 负责管理课程表应用的核心状态，包括:
-/// - 当前周数
-/// - 当前视图类型(周/日/列表视图)
-/// - 是否显示周末
-/// - 当前选择的日期
-/// - 所有课表数据
-/// - 当前显示的课表
-///
-/// 功能包括:
-/// - 状态持久化(通过AppSettings)
-/// - 课程冲突检测
-/// - 周数格式验证
-/// - 课表切换管理
-///
-/// 继承自ChangeNotifier，用于状态变更通知
 class ScheduleState extends ChangeNotifier {
-  /// 当前显示的周数(1-20)
+  // 状态变量
   int _currentWeek = 1;
-
-  /// 当前视图类型('周视图'/'日视图'/'列表视图')
   String _selectedView = '周视图';
-
-  /// 是否显示周末课程
   bool _showWeekend = true;
-
-  /// 当前选择的日期(1-7表示星期一到星期日)
   int? _selectedDay;
-
-  /// 所有课表列表
   List<Timetable> _timetables = [];
-
-  /// 当前显示的课表ID
   String _currentTimetableId = '';
 
-  /// 获取当前显示的周数
+  // 状态获取方法
   int get currentWeek => _currentWeek;
-
-  /// 获取当前视图类型
   String get selectedView => _selectedView;
-
-  /// 获取是否显示周末
   bool get showWeekend => _showWeekend;
-
-  /// 获取当前选择的日期
   int? get selectedDay => _selectedDay;
-
-  /// 获取所有课表列表
   List<Timetable> get timetables => _timetables;
-
-  /// 获取当前显示的课表ID
   String get currentTimetableId => _currentTimetableId;
 
-  /// 获取当前显示的课表对象
-  /// 
-  /// 查找顺序:
-  /// 1. 按_currentTimetableId查找
-  /// 2. 查找默认课表(isDefault=true)
-  /// 3. 返回第一个课表(如果存在)
-  /// 4. 返回null(如果没有课表)
+  // 当前课表获取方法
   Timetable? get currentTimetable {
     try {
       return _timetables.firstWhere((t) => t.id == _currentTimetableId);
@@ -77,30 +34,52 @@ class ScheduleState extends ChangeNotifier {
   }
 
   ScheduleState() {
-    _loadSettings();
-    _initTimetables();
+    _initState();
+  }
+
+  // 初始化状态
+  Future<void> _initState() async {
+    await _initTimetables();
+    await _loadSettings();
   }
 
   Future<void> _initTimetables() async {
     _timetables = await CourseService.loadTimetables();
     if (_timetables.isEmpty) {
-      _timetables = [
-        Timetable(
-          id: 'default',
-          name: '示例课表',
-          isDefault: true,
-          courses: []
-        )
-      ];
+      _timetables = [Timetable(id: 'default', name: '示例课表', isDefault: true, courses: [])];
     }
-    _currentTimetableId = _timetables.first.id;
+    
+    // 尝试加载保存的当前课表ID
+    final savedId = _timetables.firstWhere(
+      (t) => t.settings['isCurrent'] == true,
+      orElse: () => _timetables.firstWhere(
+        (t) => t.isDefault,
+        orElse: () => _timetables.first
+      )
+    ).id;
+    
+    _currentTimetableId = savedId;
     notifyListeners();
   }
 
+  // 保存当前课表设置
+  Future<void> _saveCurrentSettings() async {
+    final timetable = currentTimetable;
+    if (timetable != null) {
+      timetable.settings['currentWeek'] = _currentWeek;
+      timetable.settings['selectedView'] = _selectedView;
+      timetable.settings['showWeekend'] = _showWeekend;
+      timetable.settings['totalWeeks'] = timetable.settings['totalWeeks'] ?? 20;
+      timetable.settings['maxPeriods'] = timetable.settings['maxPeriods'] ?? 16;
+      await CourseService.saveTimetables(_timetables);
+    }
+  }
+
+  // 加载设置
   Future<void> _loadSettings() async {
     final timetable = currentTimetable;
     if (timetable != null) {
-      // 解析开始日期
+      // 加载日期设置
       DateTime? startDate;
       if (timetable.settings['startDate'] != null) {
         try {
@@ -110,46 +89,48 @@ class ScheduleState extends ChangeNotifier {
         }
       }
 
-      // 自动计算当前周数
-      if (startDate != null) {
-        final now = DateTime.now();
-        final diff = now.difference(startDate).inDays;
-        _currentWeek = (diff ~/ 7) + 1;
-        if (_currentWeek < 1) _currentWeek = 1;
-        
-        final totalWeeks = timetable.settings['totalWeeks'] ?? 20;
-        if (_currentWeek > totalWeeks) _currentWeek = totalWeeks;
-        
-        timetable.settings['currentWeek'] = _currentWeek;
-      } else {
-        _currentWeek = int.tryParse(timetable.settings['currentWeek']?.toString() ?? '1') ?? 1;
-      }
-
+      // 计算当前周数
+      _currentWeek = _calculateCurrentWeek(timetable, startDate);
+      
+      // 加载视图偏好
       _selectedView = timetable.settings['selectedView']?.toString() ?? '周视图';
       
-      // 确保showWeekend设置存在且正确加载
-      if (timetable.settings['showWeekend'] == null) {
-        timetable.settings['showWeekend'] = false;
-      }
+      // 加载周末显示设置
       _showWeekend = timetable.settings['showWeekend'] is bool 
           ? timetable.settings['showWeekend'] as bool
           : timetable.settings['showWeekend']?.toString() == 'true';
+
+      await _saveCurrentSettings();
+    } else if (_timetables.isNotEmpty) {
+      // 处理默认课表
+      final defaultTimetable = _timetables.firstWhere((t) => t.isDefault, orElse: () => _timetables.first);
       
-      // 确保总周数和最大节数设置存在
-      if (timetable.settings['totalWeeks'] == null) {
-        timetable.settings['totalWeeks'] = 20;
-      }
-      if (timetable.settings['maxPeriods'] == null) {
-        timetable.settings['maxPeriods'] = 16;
-      }
+      _currentWeek = defaultTimetable.settings['currentWeek'] as int? ?? 1;
+      _selectedView = defaultTimetable.settings['selectedView'] as String? ?? '周视图';
+      _showWeekend = defaultTimetable.settings['showWeekend'] as bool? ?? false;
       
-      await CourseService.saveTimetables(_timetables);
+      await _saveCurrentSettings();
     } else {
+      // 无课表时的默认值
       _currentWeek = 1;
       _selectedView = '周视图';
       _showWeekend = false;
     }
     notifyListeners();
+  }
+
+  // 计算当前周数
+  int _calculateCurrentWeek(Timetable timetable, DateTime? startDate) {
+    if (startDate != null) {
+      final now = DateTime.now();
+      final diff = now.difference(startDate).inDays;
+      int week = (diff ~/ 7) + 1;
+      if (week < 1) week = 1;
+      final totalWeeks = timetable.settings['totalWeeks'] ?? 20;
+      if (week > totalWeeks) week = totalWeeks;
+      return week;
+    }
+    return int.tryParse(timetable.settings['currentWeek']?.toString() ?? '1') ?? 1;
   }
 
   Future<void> updateTotalWeeks(int weeks) async {
@@ -170,25 +151,6 @@ class ScheduleState extends ChangeNotifier {
     }
   }
 
-  /// 更新或添加课程
-  ///
-  /// 参数:
-  /// - course: 要更新或添加的课程对象
-  ///   - 如果course.id为空，会自动生成新ID
-  ///   - 必须包含有效的周数格式
-  ///
-  /// 异常:
-  /// - 抛出"该时间段已有其他课程"如果检测到课程冲突
-  /// - 抛出"周数不能为空"如果周数格式为空
-  /// - 抛出"周数格式错误"如果周数格式无效
-  ///
-  /// 操作流程:
-  /// 1. 自动生成课程ID(如果需要)
-  /// 2. 检查课程时间冲突
-  /// 3. 验证周数格式
-  /// 4. 更新或添加课程
-  /// 5. 持久化保存
-  /// 6. 通知监听器
   Future<void> updateTimetable(Timetable timetable) async {
     final index = _timetables.indexWhere((t) => t.id == timetable.id);
     if (index >= 0) {
@@ -201,12 +163,10 @@ class ScheduleState extends ChangeNotifier {
   Future<void> updateCourse(Course course) async {
     final timetable = currentTimetable;
     if (timetable != null) {
-      // 确保新课程有唯一ID
       if (course.id.isEmpty) {
         course = course.copyWith(id: DateTime.now().millisecondsSinceEpoch.toString());
       }
       
-      // 检查是否已有相同时间段的课程
       final hasConflict = timetable.courses.any((c) {
         if (c.id == course.id) return false;
         return c.schedules.any((s1) {
@@ -219,24 +179,16 @@ class ScheduleState extends ChangeNotifier {
         });
       });
 
-      if (hasConflict) {
-        throw Exception('该时间段已有其他课程');
-      }
+      if (hasConflict) throw Exception('该时间段已有其他课程');
 
-      // 验证周数格式
       for (var schedule in course.schedules) {
         final weekPattern = schedule['weekPattern'] as String? ?? '';
-        if (weekPattern.isEmpty) {
-          throw Exception('周数不能为空');
-        }
-        
-        // 检查是否为连续周数格式(1-16)、离散周数格式(1,3,5)或混合格式(1-3,5,7-9)
+        if (weekPattern.isEmpty) throw Exception('周数不能为空');
         if (!RegExp(r'^(\d+(-\d+)?)(,\d+(-\d+)?)*$').hasMatch(weekPattern)) {
           throw Exception('周数格式错误，请使用如"1-16"、"1,3,5"或"1-3,5,7-9"的格式');
         }
       }
 
-      // 更新或添加课程
       final index = timetable.courses.indexWhere((c) => c.id == course.id);
       if (index >= 0) {
         timetable.courses[index] = course;
@@ -262,13 +214,8 @@ class ScheduleState extends ChangeNotifier {
     }
   }
 
-  int get totalWeeks {
-    return currentTimetable?.settings['totalWeeks'] ?? 20;
-  }
-
-  int get maxPeriods {
-    return currentTimetable?.settings['maxPeriods'] ?? 16;
-  }
+  int get totalWeeks => currentTimetable?.settings['totalWeeks'] ?? 20;
+  int get maxPeriods => currentTimetable?.settings['maxPeriods'] ?? 16;
 
   void changeView(String view) {
     if (_selectedView != view) {
@@ -326,9 +273,24 @@ class ScheduleState extends ChangeNotifier {
 
   Future<void> switchTimetable(String id) async {
     if (_timetables.any((t) => t.id == id)) {
+      // 清除所有课表的isCurrent标记
+      for (var t in _timetables) {
+        t.settings.remove('isCurrent');
+      }
+      
+      // 设置新课表为当前
+      _timetables.firstWhere((t) => t.id == id).settings['isCurrent'] = true;
+      
+      // 切换到新课表
       _currentTimetableId = id;
+      
+      // 保存所有课表
       await CourseService.saveTimetables(_timetables);
-      await _loadSettings(); // 切换课表后重新加载设置
+      
+      // 加载新课表设置
+      await _loadSettings();
+      
+      // 通知监听器
       notifyListeners();
     }
   }

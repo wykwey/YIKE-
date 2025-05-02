@@ -4,12 +4,14 @@ import '../utils/color_utils.dart';
 
 class CourseEditDialog extends StatefulWidget {
   final Course course;
-  final Function(Course) onSave;
+  final Future<bool> Function(Course) onSave;
+  final VoidCallback? onCancel;
 
   const CourseEditDialog({
     super.key,
     required this.course,
     required this.onSave,
+    this.onCancel,
   });
 
   @override
@@ -257,38 +259,38 @@ class _CourseEditDialogState extends State<CourseEditDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
           child: const Text('取消'),
+          onPressed: () {
+            if (widget.onCancel != null) {
+              widget.onCancel!();
+            }
+            if (Navigator.canPop(context)) {
+              Navigator.pop(context);
+            }
+          },
         ),
         ElevatedButton(
+          child: const Text('保存'),
           onPressed: () async {
-            final updatedCourse = _editingCourse.copyWith(
+            final course = _editingCourse.copyWith(
               name: _nameController.text,
               location: _locationController.text,
               teacher: _teacherController.text,
-              color: _selectedColor.toARGB32(),
+              color: _selectedColor.value,
+              schedules: _editingCourse.schedules.map((schedule) {
+                final index = _editingCourse.schedules.indexOf(schedule);
+                return {
+                  'day': schedule['day'],
+                  'periods': schedule['periods'],
+                  'weekPattern': _weekPatternControllers[index].text,
+                };
+              }).toList(),
             );
-            
-            if (!mounted) return;
-            
-            try {
-              final success = await widget.onSave(updatedCourse) ?? false;
-              Navigator.pop(context, success);
-              if (success && mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('课程保存成功')),
-                );
-              }
-            } catch (e) {
-              Navigator.pop(context, false);
-              if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('保存失败: ${e.toString()}')),
-                );
-              }
+            final saved = await widget.onSave(course);
+            if (saved == true && Navigator.canPop(context)) {
+              Navigator.pop(context, course);
             }
           },
-          child: const Text('保存'),
         ),
       ],
     );

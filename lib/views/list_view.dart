@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../data/course.dart';
 import '../constants/app_constants.dart';
@@ -118,22 +119,31 @@ class _CourseCardState extends State<CourseCard> {
   Future<void> _handleEditCourse() async {
     if (!mounted) return;
     
-    final editedCourse = await showDialog<Course>(
-      context: context,
-      builder: (context) => CourseEditDialog(
-        course: widget.course,
-        onSave: (editedCourse) async {
-          if (!mounted) return false;
-          final state = Provider.of<ScheduleState>(context, listen: false);
-          await state.updateCourse(editedCourse);
-          return true;
-        },
-      ),
-    );
+            final editedCourse = await showDialog<Course>(
+              context: context,
+              builder: (context) => CourseEditDialog(
+                course: widget.course,
+                onSave: (editedCourse) async {
+                  if (!mounted) return false;
+                  final state = Provider.of<ScheduleState>(context, listen: false);
+                  await state.updateCourse(editedCourse);
+                  return true;
+                },
+                onCancel: () {
+                  if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+                },
+              ),
+            ).then((saved) {
+              if (saved == true && mounted) {
+                setState(() {});
+              }
+              return saved;
+            });
     
     if (editedCourse != null && mounted) {
       final state = Provider.of<ScheduleState>(context, listen: false);
       await state.updateCourse(editedCourse);
+      setState(() {});
     }
   }
 
@@ -143,9 +153,17 @@ class _CourseCardState extends State<CourseCard> {
         ? Color(widget.course.color) 
         : ColorUtils.getCourseColor(widget.course.name);
     final bgColor = ColorUtils.getWeekColor(widget.course.schedules.first['weekPattern']);
+    final state = Provider.of<ScheduleState>(context);
+    final timetable = state.currentTimetable;
     final schedulesText = widget.course.schedules.map((s) {
       final dayText = AppConstants.weekDays[s['day'] - 1];
-      return '$dayText 第${s['periods'].join(',')}节';
+      if (timetable?.settings['startDate'] == null) {
+        return '$dayText 第${s['periods'].join(',')}节';
+      }
+      final startDate = DateTime.parse(timetable!.settings['startDate'].toString());
+      final week = int.tryParse(widget.course.schedules.first['weekPattern'].split(',').first) ?? 1;
+      final courseDate = startDate.add(Duration(days: 7 * (week - 1) + ((s['day'] as int) - 1)));
+      return '$dayText(${DateFormat('MM/dd').format(courseDate)}) 第${s['periods'].join(',')}节';
     }).join('\n');
 
     return GestureDetector(

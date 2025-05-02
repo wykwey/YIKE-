@@ -188,7 +188,7 @@ class StartDatePicker extends StatelessWidget {
           timetable.settings['startDate'] = picked.toString();
           await state.updateTimetable(timetable);
           if (context.mounted) {
-            Provider.of<ScheduleState>(context, listen: false).notifyListeners();
+            Provider.of<ScheduleState>(context, listen: false);
           }
         },
       ),

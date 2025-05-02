@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../data/course.dart';
 import '../services/course_service.dart';
@@ -101,15 +102,45 @@ class _DayViewState extends State<DayView> {
                   ),
                   padding: EdgeInsets.symmetric(horizontal: padding),
                   child: Center(
-                      child: Text(
-                        AppConstants.weekDays[i],
-                        style: TextStyle(
-                          fontSize: fontSize,
-                          fontWeight: FontWeight.bold,
-                          color: selectedDay == day ? Colors.blue.shade800 : Colors.black87,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                    child: Builder(
+                      builder: (context) {
+                        final state = Provider.of<ScheduleState>(context);
+                        final timetable = state.currentTimetable;
+                        if (timetable?.settings['startDate'] == null) {
+                          return Text(
+                            AppConstants.weekDays[i],
+                            style: TextStyle(
+                              fontSize: fontSize,
+                              fontWeight: FontWeight.bold,
+                              color: selectedDay == day ? Colors.blue.shade800 : Colors.black87,
+                            ),
+                            textAlign: TextAlign.center,
+                          );
+                        }
+                        final startDate = DateTime.parse(timetable!.settings['startDate'].toString());
+                        final courseDate = startDate.add(Duration(days: 7 * (widget.currentWeek - 1) + i));
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              AppConstants.weekDays[i],
+                              style: TextStyle(
+                                fontSize: fontSize,
+                                fontWeight: FontWeight.bold,
+                                color: selectedDay == day ? Colors.blue.shade800 : Colors.black87,
+                              ),
+                            ),
+                            Text(
+                              DateFormat('MM/dd').format(courseDate),
+                              style: TextStyle(
+                                fontSize: fontSize - 2,
+                                color: selectedDay == day ? Colors.blue.shade800 : Colors.black87,
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
                   ),
                 ),
               );
@@ -123,22 +154,31 @@ class _DayViewState extends State<DayView> {
   Future<void> _handleEditCourse(Course course) async {
     if (!mounted) return;
     
-    final editedCourse = await showDialog<Course>(
-      context: context,
-      builder: (context) => CourseEditDialog(
-        course: course,
-        onSave: (editedCourse) async {
-          if (!mounted) return false;
-          final state = Provider.of<ScheduleState>(context, listen: false);
-          await state.updateCourse(editedCourse);
-          return true;
-        },
-      ),
-    );
+          final editedCourse = await showDialog<Course>(
+            context: context,
+            builder: (context) => CourseEditDialog(
+              course: course,
+              onSave: (editedCourse) async {
+                if (!mounted) return false;
+                final state = Provider.of<ScheduleState>(context, listen: false);
+                await state.updateCourse(editedCourse);
+                return true;
+              },
+              onCancel: () {
+                if (mounted && Navigator.of(context).canPop()) Navigator.of(context).pop();
+              },
+            ),
+          ).then((saved) {
+            if (saved == true && mounted) {
+              setState(() {});
+            }
+            return saved;
+          });
     
     if (editedCourse != null && mounted) {
       final state = Provider.of<ScheduleState>(context, listen: false);
       await state.updateCourse(editedCourse);
+      setState(() {});
     }
   }
 

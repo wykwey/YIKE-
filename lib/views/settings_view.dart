@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../states/schedule_state.dart';
 import '../data/settings.dart';
@@ -61,7 +62,7 @@ class _SettingsPageState extends State<SettingsPage> {
 
     final selectedView = timetable.settings['selectedView'] ?? '周视图';
     final totalWeeks = timetable.settings['totalWeeks'] ?? 20;
-    final showWeekend = timetable.settings['showWeekend'] ?? true;
+    final showWeekend = state.showWeekend;
     final maxPeriods = timetable.settings['maxPeriods'] ?? 16;
 
     return Scaffold(
@@ -130,9 +131,24 @@ class _SettingsPageState extends State<SettingsPage> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 child: Column(
                   children: [
-                    const ListTile(
-                      leading: Icon(Icons.timeline),
-                      title: Text('总周数'),
+                    ListTile(
+                      leading: const Icon(Icons.timeline),
+                      title: const Text('总周数'),
+                      subtitle: Builder(
+                        builder: (context) {
+                          final startDateStr = timetable.settings['startDate'];
+                          final startDate = startDateStr != null 
+                              ? DateTime.parse(startDateStr.toString())
+                              : DateTime.now();
+                          final firstWeek = DateFormat('MM/dd').format(startDate);
+                          final weeksInt = totalWeeks is int ? totalWeeks : int.tryParse(totalWeeks.toString()) ?? 20;
+                          final lastWeek = DateFormat('MM/dd').format(
+                            startDate.add(Duration(days: 7 * (weeksInt - 1)))
+                          );
+                          return Text('$firstWeek - $lastWeek', 
+                            style: TextStyle(fontSize: isSmallScreen ? 12 : 14));
+                        },
+                      ),
                     ),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -158,9 +174,8 @@ class _SettingsPageState extends State<SettingsPage> {
                       secondary: const Icon(Icons.weekend),
                       value: showWeekend,
                       onChanged: (value) async {
-                        timetable.settings['showWeekend'] = value;
-                        await state.updateTimetable(timetable);
                         state.toggleWeekend(value);
+                        await state.updateTimetable(timetable);
                         if (mounted) setState(() {});
                       },
                     ),

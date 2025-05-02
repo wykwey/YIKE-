@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'components/bottom_nav_bar.dart';
-import 'data/settings.dart';
 import 'constants/app_constants.dart';
 import 'views/week_view.dart';
 import 'views/day_view.dart';
@@ -85,7 +85,6 @@ class CourseScheduleScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final state = context.watch<ScheduleState>();
-    const weekDays = AppConstants.weekDays;
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -127,46 +126,6 @@ class CourseScheduleScreen extends StatelessWidget {
       bottomNavigationBar: const AppBottomNavBar(),
       body: Column(
         children: [
-          if (state.selectedView == '周视图') 
-            Container(
-              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              child: Row(
-                children: [
-                  Container(
-                    width: 70,
-                    margin: const EdgeInsets.only(right: 8),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.blue[400],
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
-                    ),
-                    alignment: Alignment.center,
-                    child: const Text('节数', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
-                  Expanded(
-                    child: Row(
-                      children: List.generate(state.showWeekend ? 7 : 5, (index) {
-                        return Expanded(
-                          child: Container(
-                            margin: const EdgeInsets.symmetric(horizontal: 2),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            decoration: BoxDecoration(
-                              color: Colors.blue[400],
-                              borderRadius: BorderRadius.circular(10),
-                              boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(weekDays[index],
-                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                ],
-              ),
-            ),
           Expanded(
             child: state.selectedView == '周视图'
                 ? WeekView(
