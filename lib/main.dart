@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:flutter/foundation.dart';
 import 'components/bottom_nav_bar.dart';
-import 'constants/app_constants.dart';
 import 'views/week_view.dart';
 import 'views/day_view.dart';
 import 'views/list_view.dart';
 import 'views/settings_view.dart';
 import 'package:provider/provider.dart';
 import 'states/schedule_state.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 /// 应用入口函数
 /// 
@@ -23,7 +23,17 @@ import 'states/schedule_state.dart';
 /// - WidgetsFlutterBinding.ensureInitialized()是运行Flutter应用的必要前提
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-    // 设置初始化已迁移到课表级别
+  
+  // 仅在非Web平台请求存储权限
+  if (!kIsWeb) {
+    final status = await Permission.storage.request();
+    if (!status.isGranted) {
+      // 如果权限被拒绝，可以在这里处理
+      print('Storage permission denied');
+    }
+  }
+  
+  // 设置初始化已迁移到课表级别
   runApp(
     MultiProvider(
       providers: [

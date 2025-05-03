@@ -45,8 +45,8 @@ class CourseListView extends StatelessWidget {
             ),
             LayoutBuilder(
               builder: (context, constraints) {
-                const itemMinWidth = 200.0;
-                const itemMaxWidth = 240.0;
+                const itemMinWidth = 160.0;
+                const itemMaxWidth = 200.0;
                 final availableWidth = constraints.maxWidth - 16;
                 final crossAxisCount = (availableWidth / itemMinWidth).floor().clamp(1, (availableWidth / itemMinWidth).floor());
                 final itemWidth = (availableWidth / crossAxisCount).clamp(itemMinWidth, itemMaxWidth);
@@ -59,8 +59,8 @@ class CourseListView extends StatelessWidget {
                     crossAxisCount: crossAxisCount,
                     crossAxisSpacing: 6,
                     mainAxisSpacing: 6,
-                    childAspectRatio: 1.5,
-                    mainAxisExtent: itemWidth / 1.5,
+                    childAspectRatio: 1.2,
+                    mainAxisExtent: itemWidth / 1.2,
                   ),
                   itemBuilder: (context, index) {
                     return CourseCard(course: weekCourses[index]);
