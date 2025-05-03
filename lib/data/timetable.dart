@@ -1,4 +1,5 @@
 import './course.dart';
+
 class Timetable {
   final String id;
   final String name;
@@ -36,7 +37,6 @@ class Timetable {
       }
     };
 
-
   factory Timetable.fromJson(Map<String, dynamic> json) {
     return Timetable(
       id: json['id'],
@@ -46,6 +46,39 @@ class Timetable {
       settings: json['settings'] != null 
         ? Map<String, dynamic>.from(json['settings'])
         : null,
+    );
+  }
+
+  static Timetable fromRawData(List<Map<String, dynamic>> rawCourses) {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final courses = rawCourses.map((course) {
+      // 转换周次数组为字符串格式
+      final weeks = course['weeks'] as List;
+      String weekPattern;
+      if (weeks.length == 1) {
+        weekPattern = weeks.first.toString();
+      } else {
+        weekPattern = '${weeks.first}-${weeks.last}';
+      }
+
+      return Course(
+        id: '${course['name']}-${course['position']}-${weekPattern}-$timestamp',
+        name: course['name'],
+        location: course['position'],
+        teacher: course['teacher'],
+        color: 0, // 默认颜色
+        schedules: [{
+          'day': course['day'],
+          'periods': course['sections'],
+          'weekPattern': weekPattern
+        }]
+      );
+    }).toList();
+
+    return Timetable(
+      id: 'timetable-$timestamp',
+      name: '课表-$timestamp',
+      courses: courses,
     );
   }
 

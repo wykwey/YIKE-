@@ -10,62 +10,32 @@ import 'dart:convert';
 class ImportTimetableDialog extends StatelessWidget {
   const ImportTimetableDialog({super.key});
 
-  Future<void> _importTimetable(BuildContext context) async {
+  Future<void> _importFileTimetable(BuildContext context) async {
     final state = Provider.of<ScheduleState>(context, listen: false);
     try {
-      // 1. 选择文件 (支持多平台)
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json'],
       );
 
       if (result != null) {
-        // 2. 读取文件内容
         final file = result.files.single;
         final content = utf8.decode(file.bytes!);
-        
-        // 3. 解析JSON数据
         final jsonData = jsonDecode(content);
         List<Timetable> timetables = [];
 
         if (jsonData is List) {
-          // 多课表导入
-          timetables = jsonData.map((e) {
-            final timetable = Timetable.fromJson(e as Map<String, dynamic>);
-            // 为每个课程设置随机颜色
-            for (var course in timetable.courses) {
-              if (e['color'] is String && ColorUtils.courseColorMap.containsKey(e['color'])) {
-                course.color = ColorUtils.courseColorMap[e['color']]!.value;
-              } else if (course.color == 0) {
-                course.color = ColorUtils.getRandomColor(course.name).value;
-              }
-            }
-            return timetable;
-          }).toList();
+          timetables = jsonData.map((e) => Timetable.fromJson(e as Map<String, dynamic>)).toList();
         } else if (jsonData is Map) {
-          // 单课表导入
-          final timetable = Timetable.fromJson(jsonData as Map<String, dynamic>);
-          // 为每个课程设置随机颜色
-            for (var course in timetable.courses) {
-              course.color = ColorUtils.getRandomColor(course.name).value;
-            }
-          timetables = [timetable];
+          timetables = [Timetable.fromJson(jsonData as Map<String, dynamic>)];
         }
 
-        // 4. 添加到现有课表
-          for (var timetable in timetables) {
-            // 检查并处理重复ID
-            var newTimetable = timetable;
-            while (state.timetables.any((t) => t.id == newTimetable.id)) {
-              newTimetable = newTimetable.copyWith(
-                id: '${newTimetable.id}-${DateTime.now().millisecondsSinceEpoch}'
-              );
-            }
-            await state.addTimetable(newTimetable);
-          }
+        for (var timetable in timetables) {
+          await state.addTimetable(timetable);
+        }
 
-        // 5. 显示成功提示
         if (context.mounted) {
+          Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('成功导入${timetables.length}个课表')),
           );
@@ -73,6 +43,7 @@ class ImportTimetableDialog extends StatelessWidget {
       }
     } catch (e) {
       if (context.mounted) {
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('导入失败: ${e.toString()}')),
         );
@@ -107,8 +78,7 @@ class ImportTimetableDialog extends StatelessWidget {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  await _importTimetable(context);
-                  if (context.mounted) Navigator.pop(context);
+                  await _importFileTimetable(context);
                 },
                 child: const Text('文件导入'),
               ),
