@@ -1,0 +1,45 @@
+name: XiaoAiClass Build
+
+on:
+  push:
+    branches: [ XiaoAiClass ]
+  pull_request:
+    branches: [ XiaoAiClass ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.13.0'
+          channel: 'stable'
+      
+      - name: Install dependencies
+        run: flutter pub get
+        
+      - name: Analyze code
+        run: flutter analyze
+        
+      - name: Run tests
+        run: flutter test
+        
+      - name: Build APK (armeabi-v7a)
+        run: flutter build apk --release --target-platform=android-arm
+        
+      - name: Build APK (arm64-v8a)
+        run: flutter build apk --release --target-platform=android-arm64
+        
+      - name: Build APK (x86_64)
+        run: flutter build apk --release --target-platform=android-x64
+        
+      - name: Upload APKs
+        uses: actions/upload-artifact@v3
+        with:
+          name: release-apks
+          path: |
+            build/app/outputs/flutter-apk/YiClass-armeabi-v7a-release.apk
+            build/app/outputs/flutter-apk/YiClass-arm64-v8a-release.apk
+            build/app/outputs/flutter-apk/YiClass-x86_64-release.apk
