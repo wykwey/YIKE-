@@ -4,7 +4,7 @@ description: 一个课表管理工具，支持多种课程表格式导入，支�
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.5.0 <4.0.0"
 
 dependencies:
   flutter:

@@ -49,7 +49,7 @@ class Timetable {
       }
 
       return Course(
-        id: '${course['name']}-${course['position']}-${weekPattern}-$timestamp',
+        id: '${course['name']}-${course['position']}-$weekPattern-$timestamp',
         name: course['name'],
         location: course['position'],
         teacher: course['teacher'],

@@ -116,7 +116,7 @@ class _TimeSettingsDialogState extends State<TimeSettingsDialog> {
                     ],
                   ),
                 );
-              }).toList(),
+              }),
             ],
           ),
         ),

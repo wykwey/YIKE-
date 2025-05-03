@@ -69,7 +69,7 @@ class ImportTimetableDialog extends StatelessWidget {
                     .currentTimetable),
                 builder: (context, snapshot) {
                   final timetable = snapshot.data;
-                  final schoolName = timetable?.settings?['school'] as String?;
+                  final schoolName = timetable?.settings['school'] as String?;
                   
                   return ElevatedButton(
                     onPressed: () async {

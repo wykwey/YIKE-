@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../data/schools/school_service.dart';
-import '../../data/schools/school_config.dart';
 import './school_selection_page.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
