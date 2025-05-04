@@ -46,7 +46,8 @@ class _WeekViewState extends State<WeekView> {
           child: Row(
             children: [
               Container(
-                width: 70,
+                width: 50,
+                height: 56, // 固定高度匹配周数卡片
                 margin: const EdgeInsets.only(right: 8),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
@@ -55,7 +56,19 @@ class _WeekViewState extends State<WeekView> {
                   boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2))],
                 ),
                 alignment: Alignment.center,
-                child: const Text('节数', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    double fontSize = constraints.maxWidth < 50 ? 14 : 16;
+                    return Text('节数',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: fontSize,
+                        height: 1.2
+                      ),
+                    );
+                  },
+                ),
               ),
               Expanded(
                 child: Row(
@@ -122,7 +135,7 @@ class _WeekViewState extends State<WeekView> {
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           SizedBox(
-                            width: 70,
+                            width: 50,  // 从70px调整为60px
                             child: _buildPeriodLabel(context, index + 1, periodTimes, maxPeriods),
                           ),
                           Expanded(
@@ -151,7 +164,7 @@ class _WeekViewState extends State<WeekView> {
         ),
       ],
     );
-        
+
   }
 
   Widget _buildPeriodLabel(BuildContext context, int period, Map periodTimes, int maxPeriods) {
@@ -178,9 +191,16 @@ class _WeekViewState extends State<WeekView> {
 
           return TimeSettingsDialog(
             controllers: controllers,
-            onSave: (newTimes, _) async {
+            initialStartDate: timetable.settings['startDate'] != null 
+                ? DateTime.parse(timetable.settings['startDate'].toString())
+                : null,
+            onSave: (newTimes, newStartDate) async {
               timetable.settings['periodTimes'] = newTimes;
+              if (newStartDate != null) {
+                timetable.settings['startDate'] = newStartDate.toString();
+              }
               await state.updateTimetable(timetable);
+              if (mounted) setState(() {});
             },
           );
         },
@@ -196,11 +216,18 @@ class _WeekViewState extends State<WeekView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('第$period节',
-                style: TextStyle(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                double fontSize = constraints.maxWidth < 40 ? 8 : 12;
+                return Text('第$period节',
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Theme.of(context).primaryColorDark)),
+                    fontSize: fontSize,
+                    color: Theme.of(context).primaryColorDark
+                  ),
+                );
+              },
+            ),
             const SizedBox(height: 4),
             Column(
               mainAxisSize: MainAxisSize.min,
@@ -296,46 +323,59 @@ class _WeekViewState extends State<WeekView> {
         ).then(handleEditComplete);
       },
       child: Container(
-        margin: const EdgeInsets.all(2),
-        padding: const EdgeInsets.all(4),
+        margin: const EdgeInsets.all(1),
+        padding: EdgeInsets.symmetric(
+          horizontal: widget.showWeekend ? 2 : 4,
+          vertical: 2
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           border: Border(left: BorderSide(color: borderColor, width: 4)),
           borderRadius: BorderRadius.circular(8),
           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 3, offset: Offset(0, 2))],
         ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Flexible(
-                child: Text(course.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Flexible(
-                child: Text(course.teacher,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              Flexible(
-                child: Text(course.location,
-                  style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
+        child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Flexible(
+                    child: Text(course.name,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: constraints.maxWidth < (widget.showWeekend ? 80 : 100) ? 10 : (widget.showWeekend ? 12 : 15)
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Flexible(
+                    child: Text(course.teacher,
+                      style: TextStyle(
+                        fontSize: constraints.maxWidth < (widget.showWeekend ? 80 : 100) ? 8 : 10,
+                        color: Colors.grey
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Flexible(
+                    child: Text(course.location,
+                      style: TextStyle(
+                        fontSize: constraints.maxWidth < (widget.showWeekend ? 80 : 100) ? 8 : 10,
+                        color: Colors.grey
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
-      ),
-    );
+      );
+    }
   }
-}
