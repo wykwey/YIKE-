@@ -15,22 +15,6 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
-  String? _selectedSchool;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadSelectedSchool();
-  }
-
-  Future<void> _loadSelectedSchool() async {
-    final schools = await SchoolService.getSchoolNames();
-    if (schools.isNotEmpty && mounted) {
-      setState(() {
-        _selectedSchool = schools.first;
-      });
-    }
-  }
   Future<void> _showTimeSettingsDialog() async {
     if (!mounted) return;
 
@@ -250,31 +234,29 @@ class _SettingsPageState extends State<SettingsPage> {
                     ListTile(
                       leading: const Icon(Icons.school),
                       title: const Text('切换学校'),
-                      subtitle: _selectedSchool != null 
-                          ? Text(_selectedSchool!)
-                          : const Text('加载中...'),
+                      subtitle: timetable.settings['school'] != null
+                          ? Text(timetable.settings['school'].toString())
+                          : const Text('未选择学校'),
                       trailing: const Icon(Icons.arrow_drop_down),
                       onTap: () async {
                         await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => SchoolSelectionPage(
-                              currentSchool: _selectedSchool,
+                              currentSchool: timetable.settings['school']?.toString(),
                               onSchoolSelected: (selected) async {
-                                if (mounted) {
-                                  setState(() => _selectedSchool = selected);
-                                  final state = Provider.of<ScheduleState>(context, listen: false);
-                                  final timetable = state.currentTimetable;
-                                  if (timetable != null) {
-                                    timetable.settings['school'] = selected;
-                                    await state.updateTimetable(timetable);
-                                    
-                                    final jsCode = await SchoolService.getJsCode(selected);
-                                    final eduUrl = await SchoolService.getEduUrl(selected);
-                                    timetable.settings['eduUrl'] = eduUrl;
-                                    timetable.settings['jsCode'] = jsCode;
-                                    await state.updateTimetable(timetable);
-                                  }
+                                final state = Provider.of<ScheduleState>(context, listen: false);
+                                final timetable = state.currentTimetable;
+                                if (timetable != null) {
+                                  timetable.settings['school'] = selected;
+                                  await state.updateTimetable(timetable);
+                                  
+                                  final jsCode = await SchoolService.getJsCode(selected);
+                                  final eduUrl = await SchoolService.getEduUrl(selected);
+                                  timetable.settings['eduUrl'] = eduUrl;
+                                  timetable.settings['jsCode'] = jsCode;
+                                  await state.updateTimetable(timetable);
+                                  if (mounted) setState(() {});
                                 }
                               },
                             ),

@@ -99,7 +99,16 @@ class CourseScheduleScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('课程表', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('课程表', style: TextStyle(fontWeight: FontWeight.bold)),
+            Text(
+              state.currentTimetable?.settings['school']?.toString() ?? '未选择学校',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
+        ),
         backgroundColor: Colors.blueAccent,
         actions: [
           if (state.selectedView != '列表视图') ...[

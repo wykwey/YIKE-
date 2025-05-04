@@ -18,6 +18,15 @@ class SchoolConfig {
         function getCourses() {
           // 爬取课程表的逻辑
         }
+        (async () => {
+  const scheduleData = await scheduleHtmlProvider();
+  if (scheduleData !== "do not continue") {
+    const result = scheduleHtmlParser(scheduleData);
+    DataChannel.postMessage(JSON.stringify(result));
+  } else {
+    console.log('获取课程表数据失败');
+  }
+})();
       ''',
     ),
     SchoolConfig(
@@ -28,6 +37,15 @@ class SchoolConfig {
         function parseTimetable() {
           // 解析课表的逻辑
         }
+        (async () => {
+  const scheduleData = await scheduleHtmlProvider();
+  if (scheduleData !== "do not continue") {
+    const result = scheduleHtmlParser(scheduleData);
+    DataChannel.postMessage(JSON.stringify(result));
+  } else {
+    console.log('获取课程表数据失败');
+  }
+})();
       ''',
     ),
     SchoolConfig(
@@ -131,7 +149,6 @@ function scheduleHtmlParser(stringify) {
   const scheduleData = await scheduleHtmlProvider();
   if (scheduleData !== "do not continue") {
     const result = scheduleHtmlParser(scheduleData);
-    console.log('课程表数据:', result);
     DataChannel.postMessage(JSON.stringify(result));
   } else {
     console.log('获取课程表数据失败');
