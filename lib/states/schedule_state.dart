@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../services/course_service.dart';
 import '../data/course.dart';
 import '../data/timetable.dart';
@@ -59,6 +60,17 @@ class ScheduleState extends ChangeNotifier {
     ).id;
     
     _currentTimetableId = savedId;
+    
+    // 加载全局学校设置
+    final prefs = await SharedPreferences.getInstance();
+    final globalSchool = prefs.getString('globalSchool');
+    if (globalSchool != null && globalSchool.isNotEmpty) {
+      for (var timetable in _timetables) {
+        timetable.settings['school'] = globalSchool;
+      }
+      await CourseService.saveTimetables(_timetables);
+    }
+    
     notifyListeners();
   }
 

@@ -4,8 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../states/schedule_state.dart';
 import '../data/timetable.dart';
-import '../utils/color_utils.dart';
-import '../data/schools/school_service.dart';
+import '../data/schools/school_config.dart';
 import 'dart:convert';
 
 class ImportTimetableDialog extends StatelessWidget {
@@ -73,32 +72,57 @@ class ImportTimetableDialog extends StatelessWidget {
                   
                   return ElevatedButton(
                     onPressed: () async {
-                      if (schoolName == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('请先选择学校')),
-                        );
+                      if (schoolName == null || schoolName.isEmpty) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('请先选择学校')),
+                          );
+                        }
                         return;
                       }
                       
-                      final url = await SchoolService.getEduUrl(schoolName);
-                      final jsCode = await SchoolService.getJsCode(schoolName);
-                      
-                      if (url == null || jsCode == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('该学校暂不支持导入')),
-                        );
-                        return;
+                      try {
+                        final schoolConfig = SchoolConfig.findByName(schoolName);
+                        if (schoolConfig == null) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('找不到该学校的配置')),
+                            );
+                          }
+                          return;
+                        }
+                        
+                        final url = schoolConfig.eduSystemUrl;
+                        final jsCode = schoolConfig.jsCode;
+                        
+                        if (url.isEmpty || jsCode.isEmpty) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('该学校暂不支持导入')),
+                            );
+                          }
+                          return;
+                        }
+
+                        if (context.mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => EduLoginWebView(
+                                schoolUrl: url,
+                                jsCode: jsCode,
+                              ),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('获取学校配置失败: ${e.toString()}')),
+                          );
+                        }
                       }
 
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => EduLoginWebView(
-                            schoolUrl: url,
-                            jsCode: jsCode,
-                          ),
-                        ),
-                      );
                     },
                     child: const Text('教务系统导入'),
                   );

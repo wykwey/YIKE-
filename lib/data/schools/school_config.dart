@@ -32,7 +32,7 @@ class SchoolConfig {
     ),
     SchoolConfig(
       name: '河南大学',
-      eduSystemUrl: 'https://jw.henu.edu.cn',
+      eduSystemUrl: 'https://one.hnzj.edu.cn/common-service/kcb-pc/class/schedule',
       jsCode: r'''
 async function scheduleHtmlProvider() {
   try {
