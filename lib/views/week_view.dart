@@ -123,32 +123,84 @@ class _WeekViewState extends State<WeekView> {
           : preferredCellHeight;
 
       return SingleChildScrollView(
-        child: Column(
-          children: List.generate(maxPeriods, (periodIndex) {
-            return Container(
-              height: cellHeight,
-              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-              child: Row(
-                children: [
-                  _buildPeriodLabel(periodIndex + 1, periodTimes),
-                  Expanded(
+        child: Container(
+          height: cellHeight * maxPeriods,  // 设置总高度
+          child: Stack(  // 使用Stack作为主容器
+            children: [
+              // 绘制网格背景
+              Column(
+                children: List.generate(maxPeriods, (periodIndex) {
+                  return SizedBox(
+                    height: cellHeight,
                     child: Row(
-                      children:
-                          List.generate(widget.showWeekend ? 7 : 5, (dayIndex) {
-                        final course = CourseService.getPeriodCourse(
-                          widget.currentWeek,
-                          dayIndex + 1,
-                          periodIndex + 1,
-                          currentCourses,
-                        );
-                        return Expanded(child: _buildCourseCell(course));
-                      }),
+                      children: [
+                        _buildPeriodLabel(periodIndex + 1, periodTimes),
+                        Expanded(
+                          child: Container(),  // 空容器作为占位
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  );
+                }),
               ),
-            );
-          }),
+              // 绘制课程卡片
+              Positioned(
+                left: 58,  // 节次标签宽度 + margin
+                right: 12,  // 右边距
+                top: 0,
+                bottom: 0,
+                child: Stack(
+                  children: [
+                    for (int periodIndex = 0; periodIndex < maxPeriods; periodIndex++)
+                      for (int dayIndex = 0; dayIndex < (widget.showWeekend ? 7 : 5); dayIndex++)
+                        Builder(builder: (context) {
+                          final course = CourseService.getPeriodCourse(
+                            widget.currentWeek,
+                            dayIndex + 1,
+                            periodIndex + 1,
+                            currentCourses,
+                          );
+                          
+                          // 跳过连续课程的非第一节
+                          if (periodIndex > 0 && !course.isEmpty) {
+                            final isPartOfConsecutive = CourseService.areConsecutive(
+                              widget.currentWeek,
+                              dayIndex + 1,
+                              periodIndex,
+                              periodIndex + 1,
+                              currentCourses,
+                            );
+                            if (isPartOfConsecutive) {
+                              return const SizedBox.shrink();
+                            }
+                          }
+
+                          // 计算连续课程长度
+                          var consecutiveCount = 1;
+                          if (!course.isEmpty) {
+                            final consecutiveCourses = CourseService.getConsecutiveCourses(
+                              widget.currentWeek,
+                              dayIndex + 1,
+                              periodIndex + 1,
+                              currentCourses,
+                            );
+                            consecutiveCount = consecutiveCourses.length;
+                          }
+
+                          final cellWidth = (constraints.maxWidth - 70) / (widget.showWeekend ? 7 : 5);
+                          return Positioned(
+                            left: dayIndex * cellWidth,
+                            top: periodIndex * cellHeight,  // 根据节次计算位置
+                            width: cellWidth - 2,  // 减去边距
+                            height: cellHeight * consecutiveCount - 2,  // 减去边距
+                            child: _buildCourseCell(course),
+                          );
+                        }),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       );
     });
@@ -229,13 +281,29 @@ class _WeekViewState extends State<WeekView> {
 
   Widget _buildCourseCell(Course course) {
     final isEmpty = course.isEmpty;
-    final baseColor = course.color != 0
-        ? Color(course.color)
-        : ColorUtils.getCourseColor(course.name);
-    final textColor = ColorUtils.getContrastColor(baseColor);
+    List<Course> consecutiveCourses = [];
+    
+    // 只有当课程不为空时才获取连续课程
+    if (!isEmpty && course.schedules.isNotEmpty) {
+      consecutiveCourses = CourseService.getConsecutiveCourses(
+        widget.currentWeek,
+        course.schedules.first['day'],
+        course.schedules.first['periods'].first,
+        [course],
+      );
+    }
+    
+    final isConsecutive = consecutiveCourses.length > 1;
+    
+    final baseColor = isEmpty ? Colors.grey[300]! 
+        : (course.color != 0
+            ? Color(course.color)
+            : ColorUtils.getCourseColor(course.name));
+    final textColor = isEmpty ? Colors.grey[600]! 
+        : ColorUtils.getContrastColor(baseColor);
     
     return InkWell(
-      onTap: () => _showCourseEditDialog(course),
+      onTap: () => _showCourseEditDialog(course),  // 移除 isEmpty 条件
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
       hoverColor: Colors.transparent,
@@ -243,7 +311,7 @@ class _WeekViewState extends State<WeekView> {
         margin: const EdgeInsets.symmetric(horizontal: 1, vertical: 1),
         padding: EdgeInsets.symmetric(
           horizontal: widget.showWeekend ? 4 : 8,
-          vertical: 4,
+          vertical: isConsecutive ? 8 : 4,
         ),
         decoration: BoxDecoration(
           color: isEmpty ? Colors.white : baseColor.withOpacity(0.2).withAlpha(200),
@@ -267,11 +335,13 @@ class _WeekViewState extends State<WeekView> {
                   final smallWidth = constraints.maxWidth < (widget.showWeekend ? 80 : 100);
                   final nameStyle = TextStyle(
                     fontWeight: FontWeight.bold,
-                    fontSize: smallWidth ? 10 : (widget.showWeekend ? 12 : 15),
+                    fontSize: isConsecutive 
+                        ? (smallWidth ? 12 : 16)
+                        : (smallWidth ? 10 : (widget.showWeekend ? 12 : 15)),
                     color: textColor,
                   );
                   final subStyle = TextStyle(
-                    fontSize: smallWidth ? 8 : 10,
+                    fontSize: isConsecutive ? (smallWidth ? 10 : 12) : (smallWidth ? 8 : 10),
                     color: textColor,
                   );
 
@@ -280,30 +350,31 @@ class _WeekViewState extends State<WeekView> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Flexible(
+                        flex: isConsecutive ? 2 : 1,
                         child: Text(
                           course.name,
                           style: nameStyle,
-                          maxLines: 2,
+                          maxLines: isConsecutive ? 3 : 2,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: isConsecutive ? 4 : 2),
                       Flexible(
                         child: Text(
                           course.teacher,
                           style: subStyle,
-                          maxLines: 1,
+                          maxLines: isConsecutive ? 2 : 1,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      const SizedBox(height: 2),
+                      SizedBox(height: isConsecutive ? 4 : 2),
                       Flexible(
                         child: Text(
                           course.location,
                           style: subStyle,
-                          maxLines: 1,
+                          maxLines: isConsecutive ? 2 : 1,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
                         ),

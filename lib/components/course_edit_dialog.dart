@@ -41,7 +41,9 @@ class _CourseEditDialogState extends State<CourseEditDialog> {
     }).toList();
 
     _periodsControllers = _editingCourse.schedules.map((schedule) {
-      final periods = (schedule['periods'] as List<int>);
+      final periods = schedule['periods'] != null 
+          ? List<int>.from(schedule['periods'])
+          : <int>[];
       if (periods.isEmpty) return TextEditingController();
       
       // 将连续数字合并为范围
