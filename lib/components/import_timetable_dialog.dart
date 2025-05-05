@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import './edu_login_webview.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../states/schedule_state.dart';
@@ -33,22 +32,22 @@ class ImportTimetableDialog extends StatelessWidget {
           timetables = jsonData.map((e) {
             final timetable = Timetable.fromJson(e as Map<String, dynamic>);
             // 为每个课程设置随机颜色
-            for (var course in timetable.courses) {
+            timetable.courses.forEach((course) {
               if (e['color'] is String && ColorUtils.courseColorMap.containsKey(e['color'])) {
                 course.color = ColorUtils.courseColorMap[e['color']]!.value;
               } else if (course.color == 0) {
                 course.color = ColorUtils.getRandomColor(course.name).value;
               }
-            }
+            });
             return timetable;
           }).toList();
         } else if (jsonData is Map) {
           // 单课表导入
           final timetable = Timetable.fromJson(jsonData as Map<String, dynamic>);
           // 为每个课程设置随机颜色
-            for (var course in timetable.courses) {
+            timetable.courses.forEach((course) {
               course.color = ColorUtils.getRandomColor(course.name).value;
-            }
+            });
           timetables = [timetable];
         }
 
@@ -84,42 +83,18 @@ class ImportTimetableDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: const Text('导入课表'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Text('选择导入方式:'),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => EduLoginWebView(
-                        schoolUrl: 'https://one.hnzj.edu.cn/common-service/kcb-pc/class/schedule',
-                      ),
-                    ),
-                  );
-                },
-                child: const Text('教务系统导入'),
-              ),
-              ElevatedButton(
-                onPressed: () async {
-                  await _importTimetable(context);
-                  if (context.mounted) Navigator.pop(context);
-                },
-                child: const Text('文件导入'),
-              ),
-            ],
-          ),
-        ],
-      ),
+      content: const Text('请选择包含课表数据的JSON文件'),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('关闭'),
+          child: const Text('取消'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            await _importTimetable(context);
+            if (context.mounted) Navigator.pop(context);
+          },
+          child: const Text('导入'),
         ),
       ],
     );
