@@ -232,7 +232,6 @@ class _WeekViewState extends State<WeekView> {
     final baseColor = course.color != 0
         ? Color(course.color)
         : ColorUtils.getCourseColor(course.name);
-
     final textColor = ColorUtils.getContrastColor(baseColor);
     
     return InkWell(
@@ -243,50 +242,79 @@ class _WeekViewState extends State<WeekView> {
       child: Container(
         margin: const EdgeInsets.symmetric(horizontal: 1, vertical: 1),
         padding: EdgeInsets.symmetric(
-          horizontal: widget.showWeekend ? 2 : 4,
-          vertical: 2,
+          horizontal: widget.showWeekend ? 4 : 8,
+          vertical: 4,
         ),
         decoration: BoxDecoration(
-          color: isEmpty ? Colors.white : baseColor.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(8),
+          color: isEmpty ? Colors.white : baseColor.withOpacity(0.2).withAlpha(200),
+          borderRadius: BorderRadius.circular(10),
           border: Border.all(
-            color: isEmpty ? Colors.grey[300]! : baseColor.withOpacity(0.3),
-            width: 0.5
+            color: isEmpty ? Colors.grey[300]! : baseColor.withOpacity(0.5),
+            width: 1
           ),
+          boxShadow: isEmpty ? null : [
+            BoxShadow(
+              color: baseColor.withOpacity(0.3),
+              blurRadius: 4,
+              spreadRadius: 1
+            )
+          ],
         ),
-      child: isEmpty
-          ? null
-          : LayoutBuilder(
-              builder: (context, constraints) {
-                final smallWidth = constraints.maxWidth < (widget.showWeekend ? 80 : 100);
-                final nameStyle = TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: smallWidth ? 10 : (widget.showWeekend ? 12 : 15),
-                  color: textColor,
-                );
-                final subStyle = TextStyle(
-                  fontSize: smallWidth ? 8 : 10,
-                  color: textColor,
-                );
+        child: isEmpty
+            ? null
+            : LayoutBuilder(
+                builder: (context, constraints) {
+                  final smallWidth = constraints.maxWidth < (widget.showWeekend ? 80 : 100);
+                  final nameStyle = TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: smallWidth ? 10 : (widget.showWeekend ? 12 : 15),
+                    color: textColor,
+                  );
+                  final subStyle = TextStyle(
+                    fontSize: smallWidth ? 8 : 10,
+                    color: textColor,
+                  );
 
-                return Column(
-                  mainAxisAlignment: MainAxisAlignment.center, // 垂直居中
-                  crossAxisAlignment: CrossAxisAlignment.center, // 水平居中
-                  children: [
-                    Text(course.name, style: nameStyle, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
-                    const SizedBox(height: 2),
-                    Text(course.teacher, style: subStyle, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
-                    const SizedBox(height: 2),
-                    Text(course.location, style: subStyle, maxLines: 1, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
-                  ],
-                );
-              },
-            ),
-    ),
-  );
-}
-
-
+                  return Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          course.name,
+                          style: nameStyle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Flexible(
+                        child: Text(
+                          course.teacher,
+                          style: subStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Flexible(
+                        child: Text(
+                          course.location,
+                          style: subStyle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+      ),
+    );
+  }
 
   Future<void> _showCourseEditDialog(Course course) async {
     final state = context.read<ScheduleState>();

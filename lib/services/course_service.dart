@@ -35,6 +35,32 @@ class CourseService {
     );
   }
 
+  /// 获取连续课程(同一课程连续多节)
+  static List<Course> getConsecutiveCourses(int week, int day, int startPeriod, List<Course> allCourses) {
+    final courses = <Course>[];
+    Course? currentCourse;
+    int currentPeriod = startPeriod;
+    
+    while (true) {
+      final course = getPeriodCourse(week, day, currentPeriod, allCourses);
+      if (course.isEmpty) break;
+      
+      // 检查是否是同一课程的连续节次
+      if (currentCourse == null) {
+        currentCourse = course;
+        courses.add(course);
+      } else if (course.id == currentCourse.id) {
+        courses.add(course);
+      } else {
+        break;
+      }
+      
+      currentPeriod++;
+    }
+    
+    return courses;
+  }
+
   /// 更新课程信息
   static Future<void> updateCourse(Course updatedCourse, List<Course> allCourses) async {
     final prefs = await SharedPreferences.getInstance();
@@ -103,5 +129,23 @@ class CourseService {
   static Future<void> saveTimetables(List<Timetable> timetables) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('timetables', jsonEncode(timetables));
+  }
+
+  /// 检查两个节次是否属于同一连续课程
+  static bool areConsecutive(
+    int week, 
+    int day, 
+    int period1, 
+    int period2,
+    List<Course> courses
+  ) {
+    if (period2 != period1 + 1) return false;
+    
+    final course1 = getPeriodCourse(week, day, period1, courses);
+    final course2 = getPeriodCourse(week, day, period2, courses);
+    
+    return !course1.isEmpty && 
+           !course2.isEmpty && 
+           course1.id == course2.id;
   }
 }
