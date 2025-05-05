@@ -48,7 +48,7 @@ class TimetableManagementDialog extends StatelessWidget {
                       onTap: () => state.switchTimetable(timetable.id),
                     ),
                   );
-                }).toList(),
+                }),
                 const Divider(height: 32),
                 TextField(
                   controller: textController,

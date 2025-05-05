@@ -1,4 +1,4 @@
-# 📅 课表应用 - Flutter Timetable
+# 📅 课表应用 - YlClass
 
 一个功能完善的跨平台课表应用，支持周视图、日视图和列表视图，界面美观，操作流畅。
 
@@ -33,8 +33,8 @@ TODO: 添加应用截图
 
 ### 安装步骤
 ```bash
-git clone https://github.com/wykwey/YIKE-.git
-cd YIKE-
+git clone https://github.com/wykwey/YIClass
+cd YIClass
 flutter pub get
 flutter run
 ```
