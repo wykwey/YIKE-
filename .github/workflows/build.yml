@@ -1,10 +1,10 @@
-name: XiaoAiClass Build
+name: YiClass Build
 
 on:
   push:
-    branches: [ XiaoAiClass ]
+    branches: [ main ]
   pull_request:
-    branches: [ XiaoAiClass ]
+    branches: [ main ]
 
 jobs:
   build:
