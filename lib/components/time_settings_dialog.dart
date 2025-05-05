@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'start_date_picker.dart';
 
 class TimeSettingsDialog extends StatefulWidget {
   final Map<String, TextEditingController> controllers;
@@ -27,17 +28,23 @@ class _TimeSettingsDialogState extends State<TimeSettingsDialog> {
   }
 
   Future<void> _selectDate(BuildContext context) async {
-    final picked = await showDatePicker(
+    if (!mounted) return;
+    
+    final currentDate = _selectedDate ?? DateTime.now();
+    
+    await showDialog(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
+      builder: (_) => SimpleDatePicker(
+        initialDate: currentDate,
+        onDateSelected: (picked) {
+          if (picked != _selectedDate) {
+            setState(() {
+              _selectedDate = picked;
+            });
+          }
+        },
+      ),
     );
-    if (picked != null && picked != _selectedDate) {
-      setState(() {
-        _selectedDate = picked;
-      });
-    }
   }
 
   @override
@@ -116,7 +123,7 @@ class _TimeSettingsDialogState extends State<TimeSettingsDialog> {
                     ],
                   ),
                 );
-              }).toList(),
+              }),
             ],
           ),
         ),

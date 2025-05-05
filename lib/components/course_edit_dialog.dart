@@ -41,8 +41,31 @@ class _CourseEditDialogState extends State<CourseEditDialog> {
     }).toList();
 
     _periodsControllers = _editingCourse.schedules.map((schedule) {
-      return TextEditingController(
-          text: (schedule['periods'] as List).join('-'));
+      final periods = schedule['periods'] != null 
+          ? List<int>.from(schedule['periods'])
+          : <int>[];
+      if (periods.isEmpty) return TextEditingController();
+      
+      // 将连续数字合并为范围
+      final ranges = <String>[];
+      int? start;
+      int? prev;
+      
+      for (final period in periods..sort()) {
+        if (start == null) {
+          start = prev = period;
+        } else if (period == prev! + 1) {
+          prev = period;
+        } else {
+          ranges.add(start == prev ? '$start' : '$start-$prev');
+          start = prev = period;
+        }
+      }
+      if (start != null) {
+        ranges.add(start == prev ? '$start' : '$start-$prev');
+      }
+      
+      return TextEditingController(text: ranges.join(','));
     }).toList();
   }
 
