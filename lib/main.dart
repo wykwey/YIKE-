@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-<<<<<<< HEAD
 import 'package:flutter/foundation.dart';
-=======
->>>>>>> 700dffb9b084c1ea3271ba2261a0f331f793a707
 import 'components/bottom_nav_bar.dart';
 import 'views/week_view.dart';
 import 'views/day_view.dart';
