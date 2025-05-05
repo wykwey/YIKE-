@@ -1,0 +1,71 @@
+warning: in the working copy of 'linux/flutter/generated_plugin_registrant.cc', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'linux/flutter/generated_plugin_registrant.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'linux/flutter/generated_plugins.cmake', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'macos/Flutter/GeneratedPluginRegistrant.swift', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'windows/flutter/generated_plugin_registrant.cc', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'windows/flutter/generated_plugin_registrant.h', LF will be replaced by CRLF the next time Git touches it
+warning: in the working copy of 'windows/flutter/generated_plugins.cmake', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/android/app/src/main/AndroidManifest.xml b/android/app/src/main/AndroidManifest.xml[m
+[1mindex e0e2be3..9f652ff 100644[m
+[1m--- a/android/app/src/main/AndroidManifest.xml[m
+[1m+++ b/android/app/src/main/AndroidManifest.xml[m
+[36m@@ -3,7 +3,6 @@[m
+     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>[m
+     <application[m
+         android:label="YIClass"[m
+[31m-        android:label="	YiClass"[m
+         android:name="${applicationName}"[m
+         android:icon="@mipmap/ic_launcher">[m
+         <activity[m
+[1mdiff --git a/lib/components/import_timetable_dialog.dart b/lib/components/import_timetable_dialog.dart[m
+[1mindex c99721a..df09207 100644[m
+[1m--- a/lib/components/import_timetable_dialog.dart[m
+[1m+++ b/lib/components/import_timetable_dialog.dart[m
+[36m@@ -4,7 +4,6 @@[m [mimport 'package:provider/provider.dart';[m
+ import '../states/schedule_state.dart';[m
+ import '../data/timetable.dart';[m
+ import '../utils/color_utils.dart';[m
+[31m-import '../data/schools/school_service.dart';[m
+ import 'dart:convert';[m
+ [m
+ class ImportTimetableDialog extends StatelessWidget {[m
+[1mdiff --git a/lib/main.dart b/lib/main.dart[m
+[1mindex 6f3700b..5f7a2e7 100644[m
+[1m--- a/lib/main.dart[m
+[1m+++ b/lib/main.dart[m
+[36m@@ -1,7 +1,6 @@[m
+ import 'package:flutter/material.dart';[m
+ import 'package:flutter/foundation.dart';[m
+ import 'components/bottom_nav_bar.dart';[m
+[31m-import 'constants/app_constants.dart';[m
+ import 'views/week_view.dart';[m
+ import 'views/day_view.dart';[m
+ import 'views/list_view.dart';[m
+[1mdiff --git a/lib/views/settings_view.dart b/lib/views/settings_view.dart[m
+[1mindex 43d0d41..0299bc5 100644[m
+[1m--- a/lib/views/settings_view.dart[m
+[1m+++ b/lib/views/settings_view.dart[m
+[36m@@ -1,6 +1,5 @@[m
+ import 'package:flutter/material.dart';[m
+ import '../../data/schools/school_service.dart';[m
+[31m-import '../../data/schools/school_config.dart';[m
+ import './school_selection_page.dart';[m
+ import 'package:intl/intl.dart';[m
+ import 'package:provider/provider.dart';[m
+[1mdiff --git a/macos/Flutter/GeneratedPluginRegistrant.swift b/macos/Flutter/GeneratedPluginRegistrant.swift[m
+[1mindex 724bb2a..afaea55 100644[m
+[1m--- a/macos/Flutter/GeneratedPluginRegistrant.swift[m
+[1m+++ b/macos/Flutter/GeneratedPluginRegistrant.swift[m
+[36m@@ -5,8 +5,12 @@[m
+ import FlutterMacOS[m
+ import Foundation[m
+ [m
+[32m+[m[32mimport file_picker[m
+ import shared_preferences_foundation[m
+[32m+[m[32mimport webview_flutter_wkwebview[m
+ [m
+ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {[m
+[32m+[m[32m  FilePickerPlugin.register(with: registry.registrar(forPlugin: "FilePickerPlugin"))[m
+   SharedPreferencesPlugin.register(with: registry.registrar(forPlugin: "SharedPreferencesPlugin"))[m
+[32m+[m[32m  WebViewFlutterPlugin.register(with: registry.registrar(forPlugin: "WebViewFlutterPlugin"))[m
+ }[m
