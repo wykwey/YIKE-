@@ -1,287 +1,102 @@
 import 'package:flutter/material.dart';
-import '../../data/schools/school_service.dart';
-import './school_selection_page.dart';
-import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
 import '../states/schedule_state.dart';
-import '../data/settings.dart';
-import '../components/start_date_picker.dart';
+import '../data/timetable.dart';
+import '../utils/color_utils.dart';
+import 'dart:convert';
 
-class SettingsPage extends StatefulWidget {
-  const SettingsPage({super.key});
+class ImportTimetableDialog extends StatelessWidget {
+  const ImportTimetableDialog({super.key});
 
-  @override
-  State<SettingsPage> createState() => _SettingsPageState();
-}
-
-class _SettingsPageState extends State<SettingsPage> {
-  Future<void> _showTimeSettingsDialog() async {
-    if (!mounted) return;
-
+  Future<void> _importTimetable(BuildContext context) async {
     final state = Provider.of<ScheduleState>(context, listen: false);
-    final timetable = state.currentTimetable;
-    if (timetable == null) return;
+    try {
+      // 1. 选择文件 (支持多平台)
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
 
-    final periodTimes = timetable.settings['periodTimes'] ?? AppSettings.defaultPeriodTimes;
-    final maxPeriods = timetable.settings['maxPeriods'] ?? 16;
+      if (result != null) {
+        // 2. 读取文件内容
+        final file = result.files.single;
+        final content = utf8.decode(file.bytes!);
+        
+        // 3. 解析JSON数据
+        final jsonData = jsonDecode(content);
+        List<Timetable> timetables = [];
 
-    await AppSettings.showTimeSettingsDialog(
-      context,
-      periodTimes is Map ? Map<String, String>.from(periodTimes) : AppSettings.defaultPeriodTimes,
-      maxPeriods is int ? maxPeriods : 16,
-      (newTimes) async {
-        timetable.settings['periodTimes'] = newTimes;
-        await state.updateTimetable(timetable);
-        if (mounted) setState(() {});
-      },
-    );
-  }
+        if (jsonData is List) {
+          // 多课表导入
+          timetables = jsonData.map((e) {
+            final timetable = Timetable.fromJson(e as Map<String, dynamic>);
+            // 为每个课程设置随机颜色
+            timetable.courses.forEach((course) {
+              if (e['color'] is String && ColorUtils.courseColorMap.containsKey(e['color'])) {
+                course.color = ColorUtils.courseColorMap[e['color']]!.value;
+              } else if (course.color == 0) {
+                course.color = ColorUtils.getRandomColor(course.name).value;
+              }
+            });
+            return timetable;
+          }).toList();
+        } else if (jsonData is Map) {
+          // 单课表导入
+          final timetable = Timetable.fromJson(jsonData as Map<String, dynamic>);
+          // 为每个课程设置随机颜色
+            timetable.courses.forEach((course) {
+              course.color = ColorUtils.getRandomColor(course.name).value;
+            });
+          timetables = [timetable];
+        }
 
-  void _showAboutDialog() {
-    if (!mounted) return;
+        // 4. 添加到现有课表
+          for (var timetable in timetables) {
+            // 检查并处理重复ID
+            var newTimetable = timetable;
+            while (state.timetables.any((t) => t.id == newTimetable.id)) {
+              newTimetable = newTimetable.copyWith(
+                id: '${newTimetable.id}-${DateTime.now().millisecondsSinceEpoch}'
+              );
+            }
+            await state.addTimetable(newTimetable);
+          }
 
-    showAboutDialog(
-      context: context,
-      applicationName: '课程表应用',
-      applicationVersion: 'v1.0.0',
-      applicationLegalese: '© 2025 wykwe',
-      applicationIcon: const Icon(Icons.school, size: 48),
-      children: const [
-        SizedBox(height: 8),
-        Text('这是一个用于查看课程表的应用，支持每日、每周、列表等视图，并可设置课程周数、开课时间、是否显示周末等。'),
-        SizedBox(height: 8),
-        Text('开发者: wykwe'),
-        Text('版本: 1.0.0'),
-      ],
-    );
+        // 5. 显示成功提示
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('成功导入${timetables.length}个课表')),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('导入失败: ${e.toString()}')),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final state = Provider.of<ScheduleState>(context);
-    final timetable = state.currentTimetable;
-    if (timetable == null) return const SizedBox();
-
-    final selectedView = timetable.settings['selectedView'] ?? '周视图';
-    final totalWeeks = timetable.settings['totalWeeks'] ?? 20;
-    final showWeekend = state.showWeekend;
-    final maxPeriods = timetable.settings['maxPeriods'] ?? 16;
-
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('设置'),
-      ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          final isSmallScreen = constraints.maxWidth < 400;
-          return ListView(
-            padding: EdgeInsets.all(isSmallScreen ? 8 : 16),
-            children: [
-              Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Padding(
-                  padding: EdgeInsets.all(isSmallScreen ? 12 : 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('视图模式', 
-                        style: TextStyle(
-                          fontSize: isSmallScreen ? 14 : 16, 
-                          fontWeight: FontWeight.bold
-                        )),
-                      ToggleButtons(
-                        borderRadius: BorderRadius.circular(8),
-                        borderColor: Colors.grey,
-                        selectedColor: Colors.white,
-                        fillColor: Colors.blue,
-                        color: Colors.black87,
-                        isSelected: [
-                          selectedView == '周视图',
-                          selectedView == '日视图',
-                          selectedView == '列表视图'
-                        ],
-                        onPressed: (index) async {
-                          if (!mounted) return;
-
-                          final view = index == 0 ? '周视图' : index == 1 ? '日视图' : '列表视图';
-                          state.changeView(view);
-
-                          if (mounted) setState(() {});
-                        },
-                        children: [
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 8), 
-                            child: Text('周', style: TextStyle(fontSize: isSmallScreen ? 12 : 14))),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 8), 
-                            child: Text('日', style: TextStyle(fontSize: isSmallScreen ? 12 : 14))),
-                          Padding(
-                            padding: EdgeInsets.symmetric(horizontal: isSmallScreen ? 4 : 8), 
-                            child: Text('列表', style: TextStyle(fontSize: isSmallScreen ? 12 : 14))),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: isSmallScreen ? 12 : 16),
-              const StartDatePicker(),
-              SizedBox(height: isSmallScreen ? 12 : 16),
-              Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Column(
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.timeline),
-                      title: const Text('总周数'),
-                      subtitle: Builder(
-                        builder: (context) {
-                          final startDateStr = timetable.settings['startDate'];
-                          final startDate = startDateStr != null 
-                              ? DateTime.parse(startDateStr.toString())
-                              : DateTime.now();
-                          final firstWeek = DateFormat('MM/dd').format(startDate);
-                          final weeksInt = totalWeeks is int ? totalWeeks : int.tryParse(totalWeeks.toString()) ?? 20;
-                          final lastWeek = DateFormat('MM/dd').format(
-                            startDate.add(Duration(days: 7 * (weeksInt - 1)))
-                          );
-                          return Text('$firstWeek - $lastWeek', 
-                            style: TextStyle(fontSize: isSmallScreen ? 12 : 14));
-                        },
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Slider(
-                        value: totalWeeks.toDouble(),
-                        min: 1,
-                        max: 30,
-                        divisions: 29,
-                        label: '$totalWeeks',
-                        onChanged: (value) async {
-                          if (mounted) {
-                            timetable.settings['totalWeeks'] = value.round();
-                            await state.updateTimetable(timetable);
-                            setState(() {});
-                          }
-                        },
-                      ),
-                    ),
-                    const Divider(),
-                    SwitchListTile(
-                      title: const Text('是否显示周末'),
-                      subtitle: const Text('开启后将在课程表中显示周六和周日'),
-                      secondary: const Icon(Icons.weekend),
-                      value: showWeekend,
-                      onChanged: (value) async {
-                        state.toggleWeekend(value);
-                        await state.updateTimetable(timetable);
-                        if (mounted) setState(() {});
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: isSmallScreen ? 12 : 16),
-              Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Column(
-                  children: [
-                    const ListTile(
-                      leading: Icon(Icons.schedule),
-                      title: Text('课程节数'),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Slider(
-                        value: maxPeriods.toDouble(),
-                        min: 1,
-                        max: 16,
-                        divisions: 15,
-                        label: '$maxPeriods',
-                        onChanged: (value) async {
-                          if (mounted) {
-                            timetable.settings['maxPeriods'] = value.round();
-                            await state.updateTimetable(timetable);
-                            setState(() {});
-                          }
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: isSmallScreen ? 12 : 16),
-              Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  leading: const Icon(Icons.schedule),
-                  title: Text('设置上课时间', style: TextStyle(fontSize: isSmallScreen ? 14 : 16)),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: _showTimeSettingsDialog,
-                ),
-              ),
-              SizedBox(height: isSmallScreen ? 12 : 16),
-              Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: Column(
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.school),
-                      title: const Text('切换学校'),
-                      subtitle: timetable.settings['school'] != null
-                          ? Text(timetable.settings['school'].toString())
-                          : const Text('未选择学校'),
-                      trailing: const Icon(Icons.arrow_drop_down),
-                      onTap: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => SchoolSelectionPage(
-                              currentSchool: timetable.settings['school']?.toString(),
-                              onSchoolSelected: (selected) async {
-                                final state = Provider.of<ScheduleState>(context, listen: false);
-                                final timetable = state.currentTimetable;
-                                if (timetable != null) {
-                                  timetable.settings['school'] = selected;
-                                  await state.updateTimetable(timetable);
-                                  
-                                  final jsCode = await SchoolService.getJsCode(selected);
-                                  final eduUrl = await SchoolService.getEduUrl(selected);
-                                  timetable.settings['eduUrl'] = eduUrl;
-                                  timetable.settings['jsCode'] = jsCode;
-                                  await state.updateTimetable(timetable);
-                                  if (mounted) setState(() {});
-                                }
-                              },
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: isSmallScreen ? 12 : 16),
-              Card(
-                elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                child: ListTile(
-                  leading: const Icon(Icons.info),
-                  title: Text('关于', style: TextStyle(fontSize: isSmallScreen ? 14 : 16)),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: _showAboutDialog,
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+    return AlertDialog(
+      title: const Text('导入课表'),
+      content: const Text('请选择包含课表数据的JSON文件'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('取消'),
+        ),
+        ElevatedButton(
+          onPressed: () async {
+            await _importTimetable(context);
+            if (context.mounted) Navigator.pop(context);
+          },
+          child: const Text('导入'),
+        ),
+      ],
     );
   }
 }

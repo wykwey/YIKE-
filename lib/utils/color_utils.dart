@@ -62,4 +62,4 @@ class ColorUtils {
     // 没有预设则使用智能算法
     return textColors[(bgColor.value % textColors.length).abs()];
   }
-}
+
