@@ -60,6 +60,11 @@ jobs:
       # 10. 构建 APK（拆分每个 ABI）
       - name: 构建 APK（Split per ABI）
         run: flutter build apk --release --split-per-abi
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
 
       # 11. 上传构建的 APK 文件
       - name: 上传 APK 文件
