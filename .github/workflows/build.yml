@@ -2,13 +2,14 @@ name: XiaoAiClass Build
 
 on:
   push:
-    branches: [ XiaoAiClass ]
+    branches: [XiaoAiClass]
   pull_request:
-    branches: [ XiaoAiClass ]
+    branches: [XiaoAiClass]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       # 1. 拉取仓库
       - uses: actions/checkout@v4
@@ -51,11 +52,16 @@ jobs:
       - name: 运行测试用例
         run: flutter test || true
 
-      # 9. 构建 APK（拆分每个 ABI）
+      # 9. 解码 keystore 文件
+      - name: 解码 Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/upload-keystore.jks
+
+      # 10. 构建 APK（拆分每个 ABI）
       - name: 构建 APK（Split per ABI）
         run: flutter build apk --release --split-per-abi
 
-      # 10. 上传构建的 APK 文件
+      # 11. 上传构建的 APK 文件
       - name: 上传 APK 文件
         uses: actions/upload-artifact@v4
         with:

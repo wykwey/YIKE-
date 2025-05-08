@@ -30,10 +30,11 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("upload-keystore.jks")
-            storePassword = "wyk12.26"
-            keyAlias = "upload"
-            keyPassword = "wyk12.26"
+            // 使用解码的 keystore 文件路径
+            storeFile = file("android/app/upload-keystore.jks")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "your_default_password"
+            keyAlias = System.getenv("KEY_ALIAS") ?: "your_default_alias"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: "your_default_key_password"
         }
     }
 
