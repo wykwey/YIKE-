@@ -1,0 +1,22 @@
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+// 可选：自定义构建输出目录（一般 Flutter 不需要）
+def newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get().asFile
+rootProject.buildDir = newBuildDir
+
+subprojects {
+    // 设置每个子项目的构建目录（不一定需要）
+    buildDir = new File(rootProject.buildDir, project.name)
+    
+    // ⚠️ 一般不需要，如果不是必须，建议删掉：
+    evaluationDependsOn(":app")
+}
+
+tasks.register("clean", Delete) {
+    delete rootProject.buildDir
+}
