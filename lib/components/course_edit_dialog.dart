@@ -41,8 +41,31 @@ class _CourseEditDialogState extends State<CourseEditDialog> {
     }).toList();
 
     _periodsControllers = _editingCourse.schedules.map((schedule) {
-      return TextEditingController(
-          text: (schedule['periods'] as List).join('-'));
+      final periods = schedule['periods'] != null 
+          ? List<int>.from(schedule['periods'])
+          : <int>[];
+      if (periods.isEmpty) return TextEditingController();
+      
+      // 将连续数字合并为范围
+      final ranges = <String>[];
+      int? start;
+      int? prev;
+      
+      for (final period in periods..sort()) {
+        if (start == null) {
+          start = prev = period;
+        } else if (period == prev! + 1) {
+          prev = period;
+        } else {
+          ranges.add(start == prev ? '$start' : '$start-$prev');
+          start = prev = period;
+        }
+      }
+      if (start != null) {
+        ranges.add(start == prev ? '$start' : '$start-$prev');
+      }
+      
+      return TextEditingController(text: ranges.join(','));
     }).toList();
   }
 
@@ -165,15 +188,9 @@ class _CourseEditDialogState extends State<CourseEditDialog> {
                         ),
                         onChanged: (value) {
                           try {
-                            final periods = value
-                                .split('-')
-                                .where((e) => e.isNotEmpty)
-                                .map((e) => int.tryParse(e))
-                                .where((e) => e != null)
-                                .map((e) => e!)
-                                .toList();
+                            final periods = Course.parsePeriods(value);
                             if (periods.isNotEmpty) {
-                              _editingCourse.schedules[index]['periods'] = periods;
+                              _editingCourse.schedules[index]['periods'] = List<int>.from(periods);
                             }
                           } catch (_) {}
                         },

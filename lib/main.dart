@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'components/bottom_nav_bar.dart';
 import 'views/week_view.dart';
 import 'views/day_view.dart';
@@ -6,6 +7,7 @@ import 'views/list_view.dart';
 import 'views/settings_view.dart';
 import 'package:provider/provider.dart';
 import 'states/schedule_state.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 /// 应用入口函数
 /// 
@@ -21,7 +23,17 @@ import 'states/schedule_state.dart';
 /// - WidgetsFlutterBinding.ensureInitialized()是运行Flutter应用的必要前提
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-    // 设置初始化已迁移到课表级别
+  
+  // 仅在非Web平台请求存储权限
+  if (!kIsWeb) {
+    final status = await Permission.storage.request();
+    if (!status.isGranted) {
+      // 如果权限被拒绝，可以在这里处理
+      print('Storage permission denied');
+    }
+  }
+  
+  // 设置初始化已迁移到课表级别
   runApp(
     MultiProvider(
       providers: [
@@ -87,39 +99,91 @@ class CourseScheduleScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('课程表', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.blueAccent,
-        actions: [
-          if (state.selectedView != '列表视图') ...[
-            IconButton(
-              icon: Icon(Icons.chevron_left, 
-                size: 28, 
-                color: state.currentWeek > 1 ? const Color(0xFFFFFFFF) : const Color.fromRGBO(255, 255, 255, 0.3)),
-              onPressed: state.currentWeek > 1 ? () => state.changeWeek(state.currentWeek - 1) : null,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Colors.blue[800]!, Colors.blue[400]!],
             ),
-            Center(child: Text('第${state.currentWeek}周', style: const TextStyle(fontSize: 16))),
-            IconButton(
-              icon: Icon(Icons.chevron_right,
-                size: 28,
-                color: state.currentWeek < state.totalWeeks ? const Color(0xFFFFFFFF) : const Color.fromRGBO(255, 255, 255, 0.3)),
-              onPressed: state.currentWeek < state.totalWeeks
-                ? () => state.changeWeek(state.currentWeek + 1)
-                : null,
-            ),
-            const SizedBox(width: 8),
-          ],
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const SettingsPage(),
-                ),
-              );
-            },
           ),
-        ],
+        ),
+        title: Padding(
+          padding: const EdgeInsets.only(right: 8.0),
+          child: Row(
+            children: [
+              // 左侧标题区
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      '课程表',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    if (state.currentTimetable?.settings['school'] != null)
+                      Text(
+                        state.currentTimetable!.settings['school'].toString(),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white70,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              // 中间周次切换
+              Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.chevron_left,
+                        color: state.currentWeek > 1
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.3)),
+                    onPressed: state.currentWeek > 1
+                        ? () => state.changeWeek(state.currentWeek - 1)
+                        : null,
+                  ),
+                  Text(
+                    '第${state.currentWeek}周',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.chevron_right,
+                        color: state.currentWeek < state.totalWeeks
+                            ? Colors.white
+                            : Colors.white.withOpacity(0.3)),
+                    onPressed: state.currentWeek < state.totalWeeks
+                        ? () => state.changeWeek(state.currentWeek + 1)
+                        : null,
+                  ),
+                ],
+              ),
+
+              // 设置按钮
+              IconButton(
+                icon: const Icon(Icons.settings, color: Colors.white),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SettingsPage()),
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
       ),
       bottomNavigationBar: const AppBottomNavBar(),
       body: Column(

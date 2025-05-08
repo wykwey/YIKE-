@@ -6,7 +6,6 @@ class Course {
   static bool matchesWeekPattern(int week, String pattern) {
     if (pattern == 'all') return true;
     
-    // 处理逗号分隔的多段范围
     final parts = pattern.split(',');
     for (final part in parts) {
       if (part.contains('-')) {
@@ -28,6 +27,28 @@ class Course {
       }
     }
     return false;
+  }
+
+  static List<int> parsePeriods(String input) {
+    final periods = <int>[];
+    for (final part in input.split(',')) {
+      if (part.contains('-')) {
+        final range = part.split('-');
+        if (range.length == 2) {
+          final start = int.tryParse(range[0]);
+          final end = int.tryParse(range[1]);
+          if (start != null && end != null) {
+            for (int i = start; i <= end; i++) {
+              periods.add(i);
+            }
+          }
+        }
+      } else {
+        final num = int.tryParse(part);
+        if (num != null) periods.add(num);
+      }
+    }
+    return periods..sort();
   }
 
 
@@ -52,7 +73,13 @@ class Course {
       color: (json['color'] is String && ColorUtils.courseColorMap.containsKey(json['color']))
           ? ColorUtils.courseColorMap[json['color']]!.value
           : (json['color'] is int ? json['color'] : 0),
-      schedules: List<Map<String, dynamic>>.from(json['schedules']),
+      schedules: (json['schedules'] as List).map((schedule) {
+        final map = Map<String, dynamic>.from(schedule);
+        if (map['periods'] != null) {
+          map['periods'] = (map['periods'] as List).map((e) => e as int).toList();
+        }
+        return map;
+      }).toList(),
     );
   }
 

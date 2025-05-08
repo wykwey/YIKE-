@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../data/schools/school_service.dart';
+import './school_selection_page.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../states/schedule_state.dart';
@@ -221,6 +223,48 @@ class _SettingsPageState extends State<SettingsPage> {
                   title: Text('设置上课时间', style: TextStyle(fontSize: isSmallScreen ? 14 : 16)),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: _showTimeSettingsDialog,
+                ),
+              ),
+              SizedBox(height: isSmallScreen ? 12 : 16),
+              Card(
+                elevation: 3,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Column(
+                  children: [
+                    ListTile(
+                      leading: const Icon(Icons.school),
+                      title: const Text('切换学校'),
+                      subtitle: timetable.settings['school'] != null
+                          ? Text(timetable.settings['school'].toString())
+                          : const Text('未选择学校'),
+                      trailing: const Icon(Icons.arrow_drop_down),
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SchoolSelectionPage(
+                              currentSchool: timetable.settings['school']?.toString(),
+                              onSchoolSelected: (selected) async {
+                                final state = Provider.of<ScheduleState>(context, listen: false);
+                                final timetable = state.currentTimetable;
+                                if (timetable != null) {
+                                  timetable.settings['school'] = selected;
+                                  await state.updateTimetable(timetable);
+                                  
+                                  final jsCode = await SchoolService.getJsCode(selected);
+                                  final eduUrl = await SchoolService.getEduUrl(selected);
+                                  timetable.settings['eduUrl'] = eduUrl;
+                                  timetable.settings['jsCode'] = jsCode;
+                                  await state.updateTimetable(timetable);
+                                  if (mounted) setState(() {});
+                                }
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ),
               SizedBox(height: isSmallScreen ? 12 : 16),
