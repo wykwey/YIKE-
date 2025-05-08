@@ -10,6 +10,14 @@ android {
     compileSdkVersion flutter.compileSdkVersion
     ndkVersion "28.1.13356709"
 
+    defaultConfig {
+        // 设置最低 SDK 版本为 21
+        minSdkVersion 21
+        targetSdkVersion 33  // 推荐使用最新的 SDK 版本
+        versionCode flutter.versionCode.toInteger()
+        versionName flutter.versionName
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
@@ -45,3 +53,4 @@ android {
 flutter {
     source '../..'
 }
+
