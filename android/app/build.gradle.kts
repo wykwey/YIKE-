@@ -1,14 +1,14 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
-    // Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
 android {
-    ndkVersion = "28.1.13356709"
-    namespace = "com.yiclass.app"  
+    namespace = "com.example.yiclass"
     compileSdk = flutter.compileSdkVersion
+    ndkVersion = "28.1.13356709"  // 手动指定 NDK 版本为 27.0.12077973
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
@@ -20,25 +20,21 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.yiclass.app"  // 必须与namespace保持一致
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId = "com.example.yiclass"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
-    signingConfigs {
-        create("release") {
-            storeFile = file("upload-keystore.jks")
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: "your_default_password"
-            keyAlias = System.getenv("KEY_ALIAS") ?: "your_default_alias"
-            keyPassword = System.getenv("KEY_PASSWORD") ?: "your_default_key_password"
-        }
-    }
-
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            // TODO: Add your own signing config for the release build.
+            // Signing with the debug keys for now, so `flutter run --release` works.
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 }
