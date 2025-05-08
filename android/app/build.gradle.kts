@@ -31,9 +31,9 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("upload-keystore.jks")
-            storePassword = System.getenv("KEYSTORE_PASSWORD")
-            keyAlias = System.getenv("KEY_ALIAS")
-            keyPassword = System.getenv("KEY_PASSWORD")
+            storePassword = "wyk12.26"
+            keyAlias = "upload"
+            keyPassword = "wyk12.26"
         }
     }
 

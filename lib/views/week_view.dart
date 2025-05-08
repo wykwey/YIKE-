@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-
 import '../data/course.dart';
 import '../services/course_service.dart';
 import '../components/course_edit_dialog.dart';
@@ -65,7 +63,7 @@ class _WeekViewState extends State<WeekView> {
           : preferredCellHeight;
 
       return SingleChildScrollView(
-        child: Container(
+        child: SizedBox(
           height: cellHeight * maxPeriods,  // 设置总高度
           child: Stack(  // 使用Stack作为主容器
             children: [

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../states/schedule_state.dart';
+
 
 class PeriodLabel extends StatelessWidget {
   final int period;
