@@ -1,0 +1,69 @@
+name: XiaoAiClass Build
+
+on:
+  push:
+    branches: [XiaoAiClass]
+  pull_request:
+    branches: [XiaoAiClass]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 拉取仓库
+      - uses: actions/checkout@v4
+
+      # 2. 清理预装的 Flutter（避免版本冲突）
+      - name: 清理预装 Flutter
+        run: sudo rm -rf /opt/hostedtoolcache/flutter || true
+
+      # 3. 安装 Flutter 3.29.3（自带 Dart 3.7.2）
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.29.3'
+          channel: 'stable'
+
+      # 4. 验证版本
+      - name: 验证 Flutter 和 Dart 版本
+        run: |
+          flutter --version
+          dart --version
+
+      # 5. 缓存依赖（加快构建）
+      - name: 缓存 pub 包
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            .dart_tool
+          key: ${{ runner.os }}-pub-${{ hashFiles('**/pubspec.yaml') }}
+          restore-keys: ${{ runner.os }}-pub-
+
+      # 6. 安装依赖
+      - name: 安装依赖
+        run: flutter pub get
+
+      # 7. 代码分析（非阻断，不因 info/warning 报错）
+      - name: 代码分析（非阻断）
+        run: flutter analyze || true
+
+      # 8. 单元测试（如有）
+      - name: 运行测试用例
+        run: flutter test || true
+
+      # 9. 解码 keystore 文件
+      - name: 解码 Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/upload-keystore.jks
+
+      # 10. 构建 APK（拆分每个 ABI）
+      - name: 构建 APK（Split per ABI）
+        run: flutter build apk --release --split-per-abi
+
+      # 11. 上传构建的 APK 文件
+      - name: 上传 APK 文件
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apks
+          path: build/app/outputs/flutter-apk/*.apk
