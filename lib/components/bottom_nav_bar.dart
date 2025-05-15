@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../states/schedule_state.dart';
-import 'timetable_management_dialog.dart';
 import '../../views/settings_view.dart';
 
 class AppBottomNavBar extends StatelessWidget {

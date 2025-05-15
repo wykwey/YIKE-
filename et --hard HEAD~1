@@ -1,0 +1,36 @@
+[33m4bf5a70[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mXiaoAiClass[m[33m, [m[1;31morigin/XiaoAiClass[m[33m)[m 修改周视图页面,各个视图增加悬浮导入按钮
+[33me92b571[m 修改周视图页面,各个视图增加悬浮导入按钮
+[33m0cd43b7[m Update build.yml
+[33m0258da6[m Update build.gradle
+[33m087509d[m 应用签名再次修复
+[33m3b438e5[m 应用签名再次修复
+[33mb044225[m 应用签名再次修复
+[33mfe92cf0[m 应用签名修复
+[33mcea41ac[m Update build.gradle.kts
+[33m701c507[m 应用签名修复
+[33mef1b585[m 应用签名修复
+[33mf5bc5c4[m 合并相邻课程、拆分周视图组件、美化周视图界面、修复应用签名、更新版本
+[33m6875764[m 更新应用名称和图标
+[33mc1032c1[m 更新webview的教务系统适配
+[33m12f4497[m 更新 XiaoAiClass 分支内容
+[33m3b8cdca[m Merge branch 'main' of https://github.com/wykwey/YIKE-
+[33me7152cc[m 增加json课表导入功能
+[33ma0d6000[m Update README.md
+[33mae53411[m 在各个视图添加日期显示,修复课表喜好状态管理,修复显示周数按钮异常,修复课程编辑弹窗按钮异常,修复课程内容过长溢出问题,整理状态管理代码,整理周视图代码
+[33m4c821e8[m Merge branch 'main' of https://github.com/wykwey/YIKE-
+[33m19990fe[m 增加不同课表不同设置,增加开始上课时间
+[33m01f81ae[m 改善周试图响应式
+[33m6339090[m 在日视图和列表视图也加入了课程编辑,优化了项目结构
+[33mc3a4dd5[m 完成节数卡片时间编辑,完成课程内容编辑,完成多课表功能
+[33mee2779d[m 完成视图切换状态组件,加入课程时间显示,加入底部导航栏,留出课程点击接口
+[33m4060385[m 加入设置,状态组件优化
+[33made9670[m 优化
+[33m0fdd150[m 优化
+[33mc4a5170[m 优化
+[33m20d20fd[m 课程节数优化
+[33m7fbfce5[m 打包优化
+[33md85ab23[m 界面优化
+[33m2d4c3f4[m 你的修改说明
+[33mac33e71[m Merge branch 'main' of https://github.com/wykwey/YIKE-
+[33mfb695e5[m Initial commit
+[33mf80c008[m Initial commit

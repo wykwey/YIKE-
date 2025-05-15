@@ -29,7 +29,7 @@ class CourseCard extends StatelessWidget {
         isEmpty ? Colors.grey[500]! : ColorUtils.getContrastColor(baseColor);
 
     return InkWell(
-      onTap: isEmpty ? null : onTap,
+      onTap: onTap,
       splashColor: Colors.transparent,
       highlightColor: Colors.transparent,
       hoverColor: Colors.transparent,

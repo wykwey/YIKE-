@@ -4,7 +4,6 @@ import 'components/bottom_nav_bar.dart';
 import 'views/week_view.dart';
 import 'views/day_view.dart';
 import 'views/list_view.dart';
-import 'views/settings_view.dart';
 import 'package:provider/provider.dart';
 import 'states/schedule_state.dart';
 import 'package:permission_handler/permission_handler.dart';

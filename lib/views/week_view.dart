@@ -151,7 +151,11 @@ class _WeekViewState extends State<WeekView> {
                             top: periodIndex * cellHeight,  // 根据节次计算位置
                             width: cellWidth,
                             height: cellHeight * consecutiveCount,
-                            child: _buildCourseCell(course),
+                            child: _buildCourseCell(
+                              course,
+                              dayIndex + 1,  // 传递星期信息
+                              periodIndex + 1,  // 传递节次信息
+                            ),
                           );
                         }),
                   ],
@@ -205,7 +209,7 @@ class _WeekViewState extends State<WeekView> {
     );
   }
 
-  Widget _buildCourseCell(Course course) {
+  Widget _buildCourseCell(Course course, int day, int period) {
     final isEmpty = course.isEmpty;
     List<Course> consecutiveCourses = [];
     
@@ -222,12 +226,25 @@ class _WeekViewState extends State<WeekView> {
       course: course,
       isConsecutive: consecutiveCourses.length > 1,
       showWeekend: widget.showWeekend,
-      onTap: () => _showCourseEditDialog(course),
+      onTap: () => _showCourseEditDialog(course, day, period),
     );
   }
 
-  Future<void> _showCourseEditDialog(Course course) async {
+  Future<void> _showCourseEditDialog(Course course, int day, int period) async {
     final state = context.read<ScheduleState>();
+    
+    // 如果是空课程，创建一个默认的课程对象，并设置日期和节次信息
+    if (course.isEmpty) {
+      course = Course.empty().copyWith(
+        schedules: [
+          {
+            'day': day,
+            'periods': [period],
+            'weekPattern': '${widget.currentWeek}',
+          }
+        ]
+      );
+    }
 
     final result = await showDialog(
       context: context,

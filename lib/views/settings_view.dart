@@ -40,19 +40,32 @@ class _SettingsPageState extends State<SettingsPage> {
   void _showAboutDialog() {
     if (!mounted) return;
 
-    showAboutDialog(
-      context: context,
-      applicationName: '课程表应用',
-      applicationVersion: 'v1.0.0',
-      applicationLegalese: '© 2025 wykwe',
-      applicationIcon: const Icon(Icons.school, size: 48),
-      children: const [
-        SizedBox(height: 8),
-        Text('这是一个用于查看课程表的应用，支持每日、每周、列表等视图，并可设置课程周数、开课时间、是否显示周末等。'),
-        SizedBox(height: 8),
-        Text('开发者: wykwe'),
-        Text('版本: 1.0.0'),
-      ],
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => Scaffold(
+          appBar: AppBar(
+            title: const Text('关于'),
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Icon(Icons.school, size: 48),
+                SizedBox(height: 8),
+                Text('课程表应用', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                Text('版本: v1.0.0'),
+                Text('© 2025 wykwe'),
+                SizedBox(height: 16),
+                Text('这是一个用于查看课程表的应用，支持每日、每周、列表等视图，并可设置课程周数、开课时间、是否显示周末等。'),
+                SizedBox(height: 8),
+                Text('开发者: wykwe'),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

@@ -9,7 +9,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
-import 'dart:html' if (dart.library.html) 'dart:html' as html;
+import 'package:share_plus/share_plus.dart';
 
 class AddCourseFab extends StatefulWidget {
   const AddCourseFab({super.key});
@@ -206,42 +206,29 @@ class _AddCourseFabState extends State<AddCourseFab> with SingleTickerProviderSt
   Future<void> _exportToFile() async {
     _toggleMenu();
     final state = context.read<ScheduleState>();
-    final timetable = state.currentTimetable;
-    
-    if (timetable == null) {
-      _showErrorSnackBar('没有可导出的课表');
-      return;
-    }
+    final timetables = state.timetables;
+    final jsonData = timetables.map((t) => t.toJson()).toList();
+    final content = jsonEncode(jsonData);
+    final bytes = utf8.encode(content);
 
-    try {
-      // 将课表转换为JSON
-      final jsonData = timetable.toJson();
-      final jsonString = jsonEncode(jsonData);
-      final fileName = '课表_${DateTime.now().millisecondsSinceEpoch}.json';
-
-      if (kIsWeb) {
-        // Web平台使用浏览器的下载机制
-        final bytes = utf8.encode(jsonString);
-        final blob = html.Blob([bytes]);
-        final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement(href: url)
-          ..setAttribute('download', fileName)
-          ..click();
-        html.Url.revokeObjectUrl(url);
-        _showSuccessSnackBar('课表已开始下载');
-      } else {
-        // 移动端和桌面端使用文件系统
-        final directory = await getDownloadsDirectory();
-        if (directory == null) {
-          throw Exception('无法访问下载目录');
-        }
-
-        final file = File('${directory.path}/$fileName');
-        await file.writeAsString(jsonString);
-        _showSuccessSnackBar('课表已导出到: ${file.path}');
+    if (kIsWeb) {
+      // Web 平台使用 share_plus 插件
+      await Share.shareXFiles(
+        [XFile.fromData(bytes, name: 'timetable.json')],
+        text: '课表数据',
+      );
+    } else {
+      // 移动平台使用文件系统
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/timetable.json');
+      await file.writeAsBytes(bytes);
+      
+      if (mounted) {
+        await Share.shareXFiles(
+          [XFile(file.path)],
+          text: '课表数据',
+        );
       }
-    } catch (e) {
-      _showErrorSnackBar('导出失败: ${e.toString()}');
     }
   }
 

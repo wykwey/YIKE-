@@ -142,10 +142,6 @@ class _SimpleDatePickerState extends State<SimpleDatePicker> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('取消', style: TextStyle(fontSize: fontSize)),
-                  ),
                   ElevatedButton(
                     onPressed: () {
                       if (_selectedDate != null) {
@@ -154,6 +150,10 @@ class _SimpleDatePickerState extends State<SimpleDatePicker> {
                       Navigator.pop(context);
                     },
                     child: Text('确定', style: TextStyle(fontSize: fontSize)),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('取消', style: TextStyle(fontSize: fontSize)),
                   ),
                 ],
               ),
