@@ -15,6 +15,8 @@ dependencies:
   file_picker: ^10.1.2
   webview_flutter: ^4.11.0
   permission_handler: ^12.0.0+1
+  path_provider: ^2.1.5
+  html: ^0.15.4
 
 dev_dependencies:
   flutter_test:

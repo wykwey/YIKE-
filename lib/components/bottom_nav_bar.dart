@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../states/schedule_state.dart';
 import 'timetable_management_dialog.dart';
+import '../../views/settings_view.dart';
 
 class AppBottomNavBar extends StatelessWidget {
   const AppBottomNavBar({super.key});
@@ -13,29 +14,35 @@ class AppBottomNavBar extends StatelessWidget {
 
     return Theme(
       data: Theme.of(context).copyWith(
-        splashColor: Colors.transparent, // 关闭点击水波纹
-        highlightColor: Colors.transparent, // 关闭点击高亮
-        hoverColor: Colors.transparent, // 关闭鼠标悬停背景
+        splashColor: Colors.transparent,
+        highlightColor: Colors.transparent,
+        hoverColor: Colors.transparent,
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          backgroundColor: Colors.white,
+          selectedItemColor: Colors.blue[800],
+          unselectedItemColor: Colors.grey[600],
+        ),
       ),
       child: BottomNavigationBar(
         type: BottomNavigationBarType.fixed, // 防止自动切换效果类型
         currentIndex: currentIndex,
         onTap: (index) {
-          if (index == 3) {
-            showDialog(
-              context: context,
-              builder: (context) => const TimetableManagementDialog(),
+          if (index == 2) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const SettingsPage(),
+              ),
             );
           } else {
-            final views = ['周视图', '日视图', '列表视图'];
+            final views = ['周视图', '日视图'];
             state.changeView(views[index]);
           }
         },
         items: [
           _buildItem(context, Icons.calendar_view_week, '周视图', currentIndex == 0),
           _buildItem(context, Icons.calendar_today, '日视图', currentIndex == 1),
-          _buildItem(context, Icons.list, '列表视图', currentIndex == 2),
-          _buildItem(context, Icons.menu, '课表管理', currentIndex == 3),
+          _buildItem(context, Icons.settings, '设置', currentIndex == 2),
         ],
       ),
     );
@@ -47,8 +54,6 @@ class AppBottomNavBar extends StatelessWidget {
         return 0;
       case '日视图':
         return 1;
-      case '列表视图':
-        return 2;
       default:
         return 0;
     }

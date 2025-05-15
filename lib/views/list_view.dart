@@ -6,6 +6,7 @@ import '../constants/app_constants.dart';
 import '../utils/color_utils.dart';
 import '../components/course_edit_dialog.dart';
 import '../states/schedule_state.dart';
+import '../components/add_course_fab.dart';
 
 /// 列表视图组件
 ///
@@ -26,51 +27,56 @@ class CourseListView extends StatelessWidget {
   Widget build(BuildContext context) {
     final groupedCourses = _groupCoursesByWeek(courses);
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(8),
-      itemCount: groupedCourses.length,
-      itemBuilder: (context, weekIndex) {
-        final week = groupedCourses.keys.elementAt(weekIndex);
-        final weekCourses = groupedCourses[week]!;
+    return Stack(
+      children: [
+        ListView.builder(
+          padding: const EdgeInsets.all(8),
+          itemCount: groupedCourses.length,
+          itemBuilder: (context, weekIndex) {
+            final week = groupedCourses.keys.elementAt(weekIndex);
+            final weekCourses = groupedCourses[week]!;
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(top: 16, bottom: 8),
-              child: Text(
-                '第$week周',
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-            ),
-            LayoutBuilder(
-              builder: (context, constraints) {
-                const itemMinWidth = 160.0;
-                const itemMaxWidth = 200.0;
-                final availableWidth = constraints.maxWidth - 16;
-                final crossAxisCount = (availableWidth / itemMinWidth).floor().clamp(1, (availableWidth / itemMinWidth).floor());
-                final itemWidth = (availableWidth / crossAxisCount).clamp(itemMinWidth, itemMaxWidth);
-
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: weekCourses.length,
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: crossAxisCount,
-                    crossAxisSpacing: 6,
-                    mainAxisSpacing: 6,
-                    childAspectRatio: 1.2,
-                    mainAxisExtent: itemWidth / 1.2,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(top: 16, bottom: 8),
+                  child: Text(
+                    '第$week周',
+                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
-                  itemBuilder: (context, index) {
-                    return CourseCard(course: weekCourses[index]);
+                ),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    const itemMinWidth = 160.0;
+                    const itemMaxWidth = 200.0;
+                    final availableWidth = constraints.maxWidth - 16;
+                    final crossAxisCount = (availableWidth / itemMinWidth).floor().clamp(1, (availableWidth / itemMinWidth).floor());
+                    final itemWidth = (availableWidth / crossAxisCount).clamp(itemMinWidth, itemMaxWidth);
+
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: weekCourses.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 6,
+                        mainAxisSpacing: 6,
+                        childAspectRatio: 1.2,
+                        mainAxisExtent: itemWidth / 1.2,
+                      ),
+                      itemBuilder: (context, index) {
+                        return CourseCard(course: weekCourses[index]);
+                      },
+                    );
                   },
-                );
-              },
-            ),
-          ],
-        );
-      },
+                ),
+              ],
+            );
+          },
+        ),
+        const AddCourseFab(),
+      ],
     );
   }
 

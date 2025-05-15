@@ -7,6 +7,7 @@ import '../constants/app_constants.dart';
 import '../components/course_edit_dialog.dart';
 import '../states/schedule_state.dart';
 import '../utils/color_utils.dart';
+import '../components/add_course_fab.dart';
 
 /// 日视图组件
 ///
@@ -42,22 +43,27 @@ class _DayViewState extends State<DayView> {
       widget.getWeekCourses(widget.currentWeek)
     )..removeWhere((c) => c.isEmpty);
 
-    return Column(
+    return Stack(
       children: [
-        _buildDaySelector(context),
-        const SizedBox(height: 8),
-        Expanded(
-          child: dayCourses.isEmpty
-              ? const Center(child: Text("今日无课程"))
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  itemCount: dayCourses.length,
-                  itemBuilder: (context, index) {
-                    final course = dayCourses[index];
-                    return _buildCourseCard(course);
-                  },
-                ),
+        Column(
+          children: [
+            _buildDaySelector(context),
+            const SizedBox(height: 8),
+            Expanded(
+              child: dayCourses.isEmpty
+                  ? const Center(child: Text("今日无课程"))
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      itemCount: dayCourses.length,
+                      itemBuilder: (context, index) {
+                        final course = dayCourses[index];
+                        return _buildCourseCard(course);
+                      },
+                    ),
+            ),
+          ],
         ),
+        const AddCourseFab(),
       ],
     );
   }

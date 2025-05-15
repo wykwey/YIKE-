@@ -1,4 +1,4 @@
- import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../constants/app_constants.dart';
 import 'package:intl/intl.dart';
 
@@ -22,7 +22,14 @@ class WeekHeader extends StatelessWidget {
         : null;
 
     return Container(
-      margin: const EdgeInsets.only(left: 0, right: 8, top: 4, bottom: 4),
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[300]!, width: 1),
+        ),
+        color: Colors.white,
+      ),
+      padding: EdgeInsets.zero,
+      margin: EdgeInsets.zero,
       child: Row(
         children: [
           _buildHeaderCell('节数', width: 50),
@@ -42,21 +49,22 @@ class WeekHeader extends StatelessWidget {
 
   Widget _buildHeaderCell(String text, {double width = 50}) {
     return Container(
-      width: 50,
-      height: 48,
-      margin: const EdgeInsets.only(left: 0, right: 8, top: 4, bottom: 4),
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      width: 40,
+      height: 40,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
+        border: Border(
+          bottom: BorderSide(color: Colors.grey[300]!, width: 1.0),
+        ),
       ),
       alignment: Alignment.center,
-      child: Text(text,
-          style: TextStyle(
-              color: Colors.blue[800],
-              fontWeight: FontWeight.w600,
-              fontSize: 16)),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: Colors.grey[800],
+          fontWeight: FontWeight.w600,
+          fontSize: 14,
+        ),
+      ),
     );
   }
 
@@ -65,27 +73,28 @@ class WeekHeader extends StatelessWidget {
     final date = startDate?.add(Duration(days: 7 * (currentWeek - 1) + index));
     
     return Container(
-      margin: const EdgeInsets.only(left: 0, right: 8, top: 4, bottom: 4),
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!, width: 1),
-      ),
+      height: 40,
+      decoration: BoxDecoration(),
       alignment: Alignment.center,
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(weekday,
-              style: TextStyle(
-                  color: Colors.blue[800],
-                  fontWeight: FontWeight.w600,
-                  fontSize: 16)),
+          Text(
+            weekday,
+            style: TextStyle(
+              color: Colors.grey[800],
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
           if (date != null)
-            Text(DateFormat('MM/dd').format(date),
-                style: TextStyle(
-                  color: Colors.grey[600], 
-                  fontSize: 12)),
+            Text(
+              DateFormat('MM/dd').format(date),
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 12,
+              ),
+            ),
         ],
       ),
     );

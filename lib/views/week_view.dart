@@ -8,6 +8,7 @@ import '../components/week_view_components/week_header.dart';
 import '../components/week_view_components/period_label.dart';
 import '../components/week_view_components/course_card.dart';
 import '../states/schedule_state.dart';
+import '../components/add_course_fab.dart';
 
 class WeekView extends StatefulWidget {
   final int currentWeek;
@@ -37,10 +38,22 @@ class _WeekViewState extends State<WeekView> {
     final periodTimes = timetable.settings['periodTimes'] ?? {};
     final currentCourses = widget.getWeekCourses(widget.currentWeek);
 
-    return Column(
+    return Stack(
+      children: [
+        Column(
       children: [
         _buildHeaderRow(timetable),
-        Expanded(child: _buildCourseGrid(periodTimes, currentCourses)),
+        Expanded(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+            ),
+            child: _buildCourseGrid(periodTimes, currentCourses),
+          ),
+        ),
+          ],
+        ),
+        const AddCourseFab(),
       ],
     );
   }
@@ -70,13 +83,18 @@ class _WeekViewState extends State<WeekView> {
               // 绘制网格背景
               Column(
                 children: List.generate(maxPeriods, (periodIndex) {
-                  return SizedBox(
+                  return Container(
                     height: cellHeight,
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: periodIndex < maxPeriods - 1 ? BorderSide(color: Colors.grey[300]!, width: 1.0) : BorderSide.none,
+                      ),
+                    ),
                     child: Row(
                       children: [
-                        _buildPeriodLabel(periodIndex + 1, periodTimes),
+                        _buildPeriodLabel(periodIndex + 1, periodTimes, cellHeight),
                         Expanded(
-                          child: Container(),  // 空容器作为占位
+                          child: Container(),
                         ),
                       ],
                     ),
@@ -85,8 +103,8 @@ class _WeekViewState extends State<WeekView> {
               ),
               // 绘制课程卡片
               Positioned(
-                left: 58,  // 节次标签宽度 + margin
-                right: 12,  // 右边距
+                left: 40,  // 匹配调整后的PeriodLabel宽度
+                right: 0,
                 top: 0,
                 bottom: 0,
                 child: Stack(
@@ -127,12 +145,12 @@ class _WeekViewState extends State<WeekView> {
                             consecutiveCount = consecutiveCourses.length;
                           }
 
-                          final cellWidth = (constraints.maxWidth - 70) / (widget.showWeekend ? 7 : 5);
+                          final cellWidth = (constraints.maxWidth - 40) / (widget.showWeekend ? 7 : 5);
                           return Positioned(
                             left: dayIndex * cellWidth,
                             top: periodIndex * cellHeight,  // 根据节次计算位置
-                            width: cellWidth - 2,  // 减去边距
-                            height: cellHeight * consecutiveCount - 2,  // 减去边距
+                            width: cellWidth,
+                            height: cellHeight * consecutiveCount,
                             child: _buildCourseCell(course),
                           );
                         }),
@@ -146,11 +164,12 @@ class _WeekViewState extends State<WeekView> {
     });
   }
 
-  Widget _buildPeriodLabel(int period, Map periodTimes) {
+  Widget _buildPeriodLabel(int period, Map periodTimes, double cellHeight) {
     return PeriodLabel(
       period: period,
       timeText: periodTimes[period.toString()] ?? '未知时间',
       onTap: _showTimeSettingsDialog,
+      height: cellHeight,
     );
   }
 
@@ -229,4 +248,3 @@ class _WeekViewState extends State<WeekView> {
     }
   }
 }
-          

@@ -8,9 +8,10 @@ import 'views/settings_view.dart';
 import 'package:provider/provider.dart';
 import 'states/schedule_state.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'components/timetable_management_dialog.dart';
 
 /// 应用入口函数
-/// 
+///
 /// 主要功能：
 /// 1. 初始化Flutter引擎绑定(WidgetsFlutterBinding)
 /// 2. 初始化应用设置(AppSettings.init)
@@ -23,7 +24,7 @@ import 'package:permission_handler/permission_handler.dart';
 /// - WidgetsFlutterBinding.ensureInitialized()是运行Flutter应用的必要前提
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // 仅在非Web平台请求存储权限
   if (!kIsWeb) {
     final status = await Permission.storage.request();
@@ -32,7 +33,7 @@ void main() async {
       print('Storage permission denied');
     }
   }
-  
+
   // 设置初始化已迁移到课表级别
   runApp(
     MultiProvider(
@@ -47,13 +48,13 @@ void main() async {
 }
 
 /// 应用根组件
-/// 
+///
 /// 负责配置应用的全局设置，包括：
 /// - 主题样式(字体、颜色方案)
 /// - 本地化支持(中文)
 /// - 路由导航设置
 /// - 调试标志控制
-/// 
+///
 /// 使用MaterialApp作为基础框架，集成所有子组件
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -171,13 +172,13 @@ class CourseScheduleScreen extends StatelessWidget {
                 ],
               ),
 
-              // 设置按钮
+              // 课表切换按钮
               IconButton(
-                icon: const Icon(Icons.settings, color: Colors.white),
+                icon: const Icon(Icons.swap_horiz, color: Colors.white),
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SettingsPage()),
+                  showDialog(
+                    context: context,
+                    builder: (context) => const TimetableManagementDialog(),
                   );
                 },
               ),
