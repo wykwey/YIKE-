@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../states/schedule_state.dart';
+import '../states/view_state.dart';
+import '../states/timetable_state.dart';
 import '../../views/settings_view.dart';
 
 class AppBottomNavBar extends StatelessWidget {
@@ -8,8 +9,9 @@ class AppBottomNavBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<ScheduleState>();
-    final currentIndex = _getIndex(state.selectedView);
+    final viewState = context.watch<ViewState>();
+    final timetableState = context.read<TimetableState>();
+    final currentIndex = _getIndex(viewState.selectedView);
 
     return Theme(
       data: Theme.of(context).copyWith(
@@ -35,7 +37,7 @@ class AppBottomNavBar extends StatelessWidget {
             );
           } else {
             final views = ['周视图', '日视图'];
-            state.changeView(views[index]);
+            viewState.changeView(views[index], timetableState.currentTimetable);
           }
         },
         items: [

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../states/schedule_state.dart';
+import '../states/timetable_state.dart';
 import '../data/timetable.dart';
 
 class TimetableManagementDialog extends StatelessWidget {
@@ -8,7 +8,7 @@ class TimetableManagementDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<ScheduleState>();
+    final timetableState = context.watch<TimetableState>();
     final textController = TextEditingController();
 
     return AlertDialog(
@@ -24,7 +24,7 @@ class TimetableManagementDialog extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ...state.timetables.map((timetable) {
+                ...timetableState.timetables.map((timetable) {
                   return Card(
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     elevation: 2,
@@ -35,16 +35,16 @@ class TimetableManagementDialog extends StatelessWidget {
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (timetable.id == state.currentTimetableId)
+                          if (timetable.id == timetableState.currentTimetableId)
                             const Icon(Icons.check_circle, color: Colors.green),
                           if (!timetable.isDefault)
                             IconButton(
                               icon: const Icon(Icons.delete_outline),
-                              onPressed: () => state.removeTimetable(timetable.id),
+                              onPressed: () => timetableState.removeTimetable(timetable.id),
                             ),
                         ],
                       ),
-                      onTap: () => state.switchTimetable(timetable.id),
+                      onTap: () => timetableState.switchTimetable(timetable.id),
                     ),
                   );
                 }),
@@ -72,7 +72,7 @@ class TimetableManagementDialog extends StatelessWidget {
           onPressed: () {
             final name = textController.text.trim();
             if (name.isNotEmpty) {
-              state.addTimetable(Timetable(
+              timetableState.addTimetable(Timetable(
                 id: DateTime.now().millisecondsSinceEpoch.toString(),
                 name: name,
                 courses: [],

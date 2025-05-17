@@ -36,8 +36,8 @@ class CourseCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           border: Border(
-            right: BorderSide(color: Colors.grey[300]!, width: 0.5),
-            bottom: BorderSide(color: Colors.grey[300]!, width: 0.5),
+            right: BorderSide(color: Colors.grey[200]!, width: 0.5),
+            bottom: BorderSide(color: Colors.grey[200]!, width: 0.5),
           ),
           color: isEmpty ? Colors.white : null,
         ),
@@ -50,7 +50,7 @@ class CourseCard extends StatelessWidget {
         color: baseColor,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: Colors.grey[300]!,
+          color: Colors.grey[200]!,
           width: 1,
         ),
                 ),

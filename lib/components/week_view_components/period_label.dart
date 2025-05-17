@@ -29,7 +29,7 @@ class PeriodLabel extends StatelessWidget {
         margin: EdgeInsets.zero,
         decoration: BoxDecoration(
           border: Border(
-            right: BorderSide(color: Colors.grey[300]!, width: 1.0),
+            right: BorderSide(color: Colors.grey[200]!, width: 1.0),
           ),
         ),
         child: Center(
@@ -40,10 +40,10 @@ class PeriodLabel extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text('$period',
-                    style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 11,
-                        color: Colors.grey[800])),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.normal,
+                        fontSize: 16,
+                        color: Colors.black)),
                 const SizedBox(height: 2),
                 Column(
                   mainAxisSize: MainAxisSize.min,

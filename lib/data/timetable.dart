@@ -1,5 +1,5 @@
 import './course.dart';
-import './settings.dart';
+import '../constants/app_constants.dart';
 
 class Timetable {
   final String id;
@@ -18,7 +18,7 @@ class Timetable {
       'startDate': DateTime.now().toString(),
       'totalWeeks': 20,
       'maxPeriods': 16,
-      'periodTimes': AppSettings.defaultPeriodTimes
+      'periodTimes': AppConstants.defaultPeriodTimes
     };
 
   factory Timetable.fromJson(Map<String, dynamic> json) {

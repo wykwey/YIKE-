@@ -24,7 +24,7 @@ class WeekHeader extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: Colors.grey[300]!, width: 1),
+          bottom: BorderSide(color: Colors.grey[200]!, width: 1),
         ),
         color: Colors.white,
       ),
@@ -51,17 +51,13 @@ class WeekHeader extends StatelessWidget {
     return Container(
       width: 40,
       height: 40,
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(color: Colors.grey[300]!, width: 1.0),
-        ),
-      ),
+      decoration: const BoxDecoration(),
       alignment: Alignment.center,
       child: Text(
         text,
-        style: TextStyle(
-          color: Colors.grey[800],
-          fontWeight: FontWeight.w600,
+        style: const TextStyle(
+          color: Colors.black,
+          fontWeight: FontWeight.normal,
           fontSize: 14,
         ),
       ),
@@ -81,9 +77,9 @@ class WeekHeader extends StatelessWidget {
         children: [
           Text(
             weekday,
-            style: TextStyle(
-              color: Colors.grey[800],
-              fontWeight: FontWeight.w600,
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.normal,
               fontSize: 14,
             ),
           ),

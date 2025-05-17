@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/schools/school_service.dart';
-import '../../states/schedule_state.dart';
+import '../../states/timetable_state.dart';
 import 'package:provider/provider.dart';
 
 class SchoolSelectionPage extends StatelessWidget {
@@ -20,11 +20,11 @@ class SchoolSelectionPage extends StatelessWidget {
     await prefs.setString('globalSchool', schoolName);
     
     // 更新当前课表设置
-    final state = Provider.of<ScheduleState>(context, listen: false);
-    final timetable = state.currentTimetable;
+    final timetableState = Provider.of<TimetableState>(context, listen: false);
+    final timetable = timetableState.currentTimetable;
     if (timetable != null) {
       timetable.settings['school'] = schoolName;
-      await state.updateTimetable(timetable);
+      await timetableState.updateTimetable(timetable);
     }
     
     onSchoolSelected(schoolName);

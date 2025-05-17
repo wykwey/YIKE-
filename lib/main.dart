@@ -5,9 +5,13 @@ import 'views/week_view.dart';
 import 'views/day_view.dart';
 import 'views/list_view.dart';
 import 'package:provider/provider.dart';
-import 'states/schedule_state.dart';
+import 'states/timetable_state.dart';
+import 'states/view_state.dart';
+import 'states/week_state.dart';
+import 'states/state_coordinator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'components/timetable_management_dialog.dart';
+import 'package:flutter/services.dart';
 
 /// 应用入口函数
 ///
@@ -15,7 +19,9 @@ import 'components/timetable_management_dialog.dart';
 /// 1. 初始化Flutter引擎绑定(WidgetsFlutterBinding)
 /// 2. 初始化应用设置(AppSettings.init)
 /// 3. 配置全局状态管理(使用MultiProvider)
-///    - ScheduleState: 管理课程表相关状态
+///    - TimetableState: 管理课表数据
+///    - ViewState: 管理视图相关状态
+///    - WeekState: 管理周次相关状态
 /// 4. 启动应用(runApp)
 ///
 /// 注意：
@@ -33,15 +39,17 @@ void main() async {
     }
   }
 
-  // 设置初始化已迁移到课表级别
+  // 使用MultiProvider注册多个状态管理类
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => ScheduleState(),
-        ),
+        ChangeNotifierProvider(create: (_) => TimetableState()),
+        ChangeNotifierProvider(create: (_) => ViewState()),
+        ChangeNotifierProvider(create: (_) => WeekState()),
       ],
-      child: const MyApp(),
+      child: StateCoordinator(
+        child: const MyApp(),
+      ),
     ),
   );
 }
@@ -82,7 +90,7 @@ class MyApp extends StatelessWidget {
 /// - 列表视图：显示所有课程列表
 ///
 /// 状态管理：
-/// - 通过ScheduleState管理当前周数、视图类型等状态
+/// - 通过拆分的多个状态类管理应用状态
 /// - 使用Provider进行状态共享
 ///
 /// 布局结构：
@@ -94,86 +102,60 @@ class CourseScheduleScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<ScheduleState>();
+    final timetableState = context.watch<TimetableState>();
+    final viewState = context.watch<ViewState>();
+    final weekState = context.watch<WeekState>();
 
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        backgroundColor: Colors.blueAccent,
-        flexibleSpace: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Colors.blue[800]!, Colors.blue[400]!],
-            ),
-          ),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => SystemNavigator.pop(),
         ),
-        title: Padding(
-          padding: const EdgeInsets.only(right: 8.0),
-          child: Row(
-            children: [
-              // 左侧标题区
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      '课程表',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    if (state.currentTimetable?.settings['school'] != null)
-                      Text(
-                        state.currentTimetable!.settings['school'].toString(),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white70,
-                        ),
-                      ),
-                  ],
-                ),
+        centerTitle: true,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: Icon(Icons.chevron_left,
+                  color: weekState.currentWeek > 1
+                      ? Colors.black87
+                      : Colors.black26),
+              onPressed: weekState.currentWeek > 1
+                  ? () => weekState.changeWeek(weekState.currentWeek - 1, timetableState.currentTimetable)
+                  : null,
+            ),
+            Text(
+              '第${weekState.currentWeek}周',
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
               ),
-
-              // 中间周次切换
-              Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.chevron_left,
-                        color: state.currentWeek > 1
-                            ? Colors.white
-                            : Colors.white.withOpacity(0.3)),
-                    onPressed: state.currentWeek > 1
-                        ? () => state.changeWeek(state.currentWeek - 1)
-                        : null,
-                  ),
-                  Text(
-                    '第${state.currentWeek}周',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.chevron_right,
-                        color: state.currentWeek < state.totalWeeks
-                            ? Colors.white
-                            : Colors.white.withOpacity(0.3)),
-                    onPressed: state.currentWeek < state.totalWeeks
-                        ? () => state.changeWeek(state.currentWeek + 1)
-                        : null,
-                  ),
-                ],
-              ),
-
-              // 课表切换按钮
-              IconButton(
-                icon: const Icon(Icons.swap_horiz, color: Colors.white),
+            ),
+            IconButton(
+              icon: Icon(Icons.chevron_right,
+                  color: weekState.currentWeek < timetableState.totalWeeks
+                      ? Colors.black87
+                      : Colors.black26),
+              onPressed: weekState.currentWeek < timetableState.totalWeeks
+                  ? () => weekState.changeWeek(weekState.currentWeek + 1, timetableState.currentTimetable)
+                  : null,
+            ),
+          ],
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: IconButton(
+                icon: const Icon(Icons.swap_horiz, color: Colors.black54),
                 onPressed: () {
                   showDialog(
                     context: context,
@@ -181,29 +163,29 @@ class CourseScheduleScreen extends StatelessWidget {
                   );
                 },
               ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
       bottomNavigationBar: const AppBottomNavBar(),
       body: Column(
         children: [
           Expanded(
-            child: state.selectedView == '周视图'
+            child: viewState.selectedView == '周视图'
                 ? WeekView(
-                    currentWeek: state.currentWeek,
-                    maxPeriods: state.maxPeriods,
-                    getWeekCourses: (week) => state.getWeekCourses(week),
-                    showWeekend: state.showWeekend,
+                    currentWeek: weekState.currentWeek,
+                    maxPeriods: timetableState.maxPeriods,
+                    getWeekCourses: (week) => weekState.getWeekCourses(week, timetableState.currentTimetable),
+                    showWeekend: viewState.showWeekend,
                   )
-                : state.selectedView == '日视图'
+                : viewState.selectedView == '日视图'
                     ? DayView(
-                        currentWeek: state.currentWeek,
-                        getWeekCourses: (week) => state.getWeekCourses(week),
-                        showWeekend: state.showWeekend,
+                        currentWeek: weekState.currentWeek,
+                        getWeekCourses: (week) => weekState.getWeekCourses(week, timetableState.currentTimetable),
+                        showWeekend: viewState.showWeekend,
                       )
                     : CourseListView(
-                        courses: Provider.of<ScheduleState>(context).currentTimetable?.courses ?? [],
+                        courses: timetableState.currentTimetable?.courses ?? [],
                       ),
           ),
         ],

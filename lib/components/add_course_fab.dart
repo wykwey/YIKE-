@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:provider/provider.dart';
-import '../states/schedule_state.dart';
+import '../states/timetable_state.dart';
 import '../data/timetable.dart';
 import '../data/schools/school_config.dart';
 import './edu_login_webview.dart';
@@ -131,8 +131,8 @@ class _AddCourseFabState extends State<AddCourseFab> with SingleTickerProviderSt
 
   Future<void> _importFromEduSystem() async {
     _toggleMenu();
-    final state = context.read<ScheduleState>();
-    final timetable = state.currentTimetable;
+    final timetableState = context.read<TimetableState>();
+    final timetable = timetableState.currentTimetable;
     final schoolName = timetable?.settings['school'] as String?;
 
     if (schoolName == null || schoolName.isEmpty) {
@@ -173,7 +173,7 @@ class _AddCourseFabState extends State<AddCourseFab> with SingleTickerProviderSt
 
   Future<void> _importFromFile() async {
     _toggleMenu();
-    final state = context.read<ScheduleState>();
+    final timetableState = context.read<TimetableState>();
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -193,7 +193,7 @@ class _AddCourseFabState extends State<AddCourseFab> with SingleTickerProviderSt
         }
 
         for (var timetable in timetables) {
-          await state.addTimetable(timetable);
+          await timetableState.addTimetable(timetable);
         }
 
         _showSuccessSnackBar('成功导入${timetables.length}个课表');
@@ -205,30 +205,45 @@ class _AddCourseFabState extends State<AddCourseFab> with SingleTickerProviderSt
 
   Future<void> _exportToFile() async {
     _toggleMenu();
-    final state = context.read<ScheduleState>();
-    final timetables = state.timetables;
-    final jsonData = timetables.map((t) => t.toJson()).toList();
-    final content = jsonEncode(jsonData);
-    final bytes = utf8.encode(content);
+    try {
+      final timetableState = context.read<TimetableState>();
+      final timetables = timetableState.timetables;
+      final jsonData = timetables.map((t) => t.toJson()).toList();
+      final content = jsonEncode(jsonData);
+      final bytes = utf8.encode(content);
 
-    if (kIsWeb) {
-      // Web 平台使用 share_plus 插件
-      await Share.shareXFiles(
-        [XFile.fromData(bytes, name: 'timetable.json')],
-        text: '课表数据',
-      );
-    } else {
-      // 移动平台使用文件系统
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/timetable.json');
-      await file.writeAsBytes(bytes);
-      
-      if (mounted) {
+      if (kIsWeb) {
+        // Web平台使用XFile的fromData方法并提供更完整的元数据
+        final xFile = XFile.fromData(
+          bytes,
+          name: 'timetable.json',
+          mimeType: 'application/json',
+          lastModified: DateTime.now(),
+        );
+        
+        // 确保是在用户交互上下文中调用share
         await Share.shareXFiles(
-          [XFile(file.path)],
+          [xFile],
           text: '课表数据',
         );
+        
+        _showSuccessSnackBar('导出成功');
+      } else {
+        // 移动平台使用文件系统
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/timetable.json');
+        await file.writeAsBytes(bytes);
+        
+        if (mounted) {
+          await Share.shareXFiles(
+            [XFile(file.path)],
+            text: '课表数据',
+          );
+          _showSuccessSnackBar('导出成功');
+        }
       }
+    } catch (e) {
+      _showErrorSnackBar('导出失败: ${e.toString()}');
     }
   }
 

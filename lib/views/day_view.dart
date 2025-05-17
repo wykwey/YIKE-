@@ -5,7 +5,8 @@ import '../data/course.dart';
 import '../services/course_service.dart';
 import '../constants/app_constants.dart';
 import '../components/course_edit_dialog.dart';
-import '../states/schedule_state.dart';
+import '../states/timetable_state.dart';
+import '../states/week_state.dart';
 import '../utils/color_utils.dart';
 import '../components/add_course_fab.dart';
 
@@ -43,28 +44,31 @@ class _DayViewState extends State<DayView> {
       widget.getWeekCourses(widget.currentWeek)
     )..removeWhere((c) => c.isEmpty);
 
-    return Stack(
-      children: [
-        Column(
-          children: [
-            _buildDaySelector(context),
-            const SizedBox(height: 8),
-            Expanded(
-              child: dayCourses.isEmpty
-                  ? const Center(child: Text("今日无课程"))
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      itemCount: dayCourses.length,
-                      itemBuilder: (context, index) {
-                        final course = dayCourses[index];
-                        return _buildCourseCard(course);
-                      },
-                    ),
-            ),
-          ],
-        ),
-        const AddCourseFab(),
-      ],
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          Column(
+            children: [
+              _buildDaySelector(context),
+              const SizedBox(height: 8),
+              Expanded(
+                child: dayCourses.isEmpty
+                    ? const Center(child: Text("今日无课程"))
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        itemCount: dayCourses.length,
+                        itemBuilder: (context, index) {
+                          final course = dayCourses[index];
+                          return _buildCourseCard(course);
+                        },
+                      ),
+              ),
+            ],
+          ),
+          const AddCourseFab(),
+        ],
+      ),
     );
   }
 
@@ -110,8 +114,8 @@ class _DayViewState extends State<DayView> {
                   child: Center(
                     child: Builder(
                       builder: (context) {
-                        final state = Provider.of<ScheduleState>(context);
-                        final timetable = state.currentTimetable;
+                        final timetableState = Provider.of<TimetableState>(context);
+                        final timetable = timetableState.currentTimetable;
                         if (timetable?.settings['startDate'] == null) {
                           return Text(
                             AppConstants.weekDays[i],
@@ -166,8 +170,8 @@ class _DayViewState extends State<DayView> {
               course: course,
               onSave: (editedCourse) async {
                 if (!mounted) return false;
-                final state = Provider.of<ScheduleState>(context, listen: false);
-                await state.updateCourse(editedCourse);
+                final timetableState = Provider.of<TimetableState>(context, listen: false);
+                await timetableState.updateCourse(editedCourse);
                 return true;
               },
               onCancel: () {
@@ -182,8 +186,8 @@ class _DayViewState extends State<DayView> {
           });
     
     if (editedCourse != null && mounted) {
-      final state = Provider.of<ScheduleState>(context, listen: false);
-      await state.updateCourse(editedCourse);
+      final timetableState = Provider.of<TimetableState>(context, listen: false);
+      await timetableState.updateCourse(editedCourse);
       setState(() {});
     }
   }

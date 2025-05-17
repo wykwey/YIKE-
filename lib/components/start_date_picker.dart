@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
-import '../states/schedule_state.dart';
+import '../states/timetable_state.dart';
+import '../states/week_state.dart';
 
 // 自定义日期选择器组件
 class SimpleDatePicker extends StatefulWidget {
@@ -94,7 +95,9 @@ class _SimpleDatePickerState extends State<SimpleDatePicker> {
     final headerFontSize = isSmallScreen ? 14.0 : 16.0;
 
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      elevation: 0,
+      backgroundColor: Colors.white,
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       child: ConstrainedBox(
         constraints: BoxConstraints(maxWidth: isSmallScreen ? screenWidth - 32 : 400),
@@ -142,7 +145,15 @@ class _SimpleDatePickerState extends State<SimpleDatePicker> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: Text('取消', style: TextStyle(fontSize: fontSize)),
+                  ),
                   ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      elevation: 0,
+                      backgroundColor: Colors.blue,
+                    ),
                     onPressed: () {
                       if (_selectedDate != null) {
                         widget.onDateSelected(_selectedDate!);
@@ -150,10 +161,6 @@ class _SimpleDatePickerState extends State<SimpleDatePicker> {
                       Navigator.pop(context);
                     },
                     child: Text('确定', style: TextStyle(fontSize: fontSize)),
-                  ),
-                  TextButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: Text('取消', style: TextStyle(fontSize: fontSize)),
                   ),
                 ],
               ),
@@ -172,8 +179,9 @@ class StartDatePicker extends StatelessWidget {
   Future<void> _pickStartDate(BuildContext context) async {
     if (!context.mounted) return;
 
-    final state = Provider.of<ScheduleState>(context, listen: false);
-    final timetable = state.currentTimetable;
+    final timetableState = Provider.of<TimetableState>(context, listen: false);
+    final weekState = Provider.of<WeekState>(context, listen: false);
+    final timetable = timetableState.currentTimetable;
     if (timetable == null) return;
 
     final currentDate = timetable.settings['startDate'] != null
@@ -186,9 +194,10 @@ class StartDatePicker extends StatelessWidget {
         initialDate: currentDate,
         onDateSelected: (picked) async {
           timetable.settings['startDate'] = picked.toString();
-          await state.updateTimetable(timetable);
+          await timetableState.updateTimetable(timetable);
+          // 更新当前周数
           if (context.mounted) {
-            Provider.of<ScheduleState>(context, listen: false);
+            await weekState.loadFromTimetable(timetable);
           }
         },
       ),
@@ -197,8 +206,8 @@ class StartDatePicker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = Provider.of<ScheduleState>(context);
-    final timetable = state.currentTimetable;
+    final timetableState = Provider.of<TimetableState>(context);
+    final timetable = timetableState.currentTimetable;
     if (timetable == null) return const SizedBox();
 
     final dateStr = timetable.settings['startDate'] != null
@@ -206,20 +215,11 @@ class StartDatePicker extends StatelessWidget {
             DateTime.parse(timetable.settings['startDate'].toString()))
         : '未设置';
 
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Column(
-        children: [
-          ListTile(
-            leading: const Icon(Icons.calendar_today),
-            title: const Text('开始上课日期'),
-            subtitle: Text(dateStr),
-            trailing: const Icon(Icons.edit_calendar),
-            onTap: () => _pickStartDate(context),
-          ),
-        ],
-      ),
+    return ListTile(
+      title: const Text('开始上课日期', style: TextStyle(color: Colors.black)),
+      subtitle: Text(dateStr),
+      trailing: const Icon(Icons.edit_calendar),
+      onTap: () => _pickStartDate(context),
     );
   }
 }

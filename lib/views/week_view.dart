@@ -3,12 +3,13 @@ import 'package:provider/provider.dart';
 import '../data/course.dart';
 import '../services/course_service.dart';
 import '../components/course_edit_dialog.dart';
-import '../components/time_settings_dialog.dart';
 import '../components/week_view_components/week_header.dart';
 import '../components/week_view_components/period_label.dart';
 import '../components/week_view_components/course_card.dart';
-import '../states/schedule_state.dart';
+import '../states/timetable_state.dart';
+import '../states/week_state.dart';
 import '../components/add_course_fab.dart';
+import '../views/time_settings_page.dart';
 
 class WeekView extends StatefulWidget {
   final int currentWeek;
@@ -31,8 +32,8 @@ class WeekView extends StatefulWidget {
 class _WeekViewState extends State<WeekView> {
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<ScheduleState>();
-    final timetable = state.currentTimetable;
+    final timetableState = context.watch<TimetableState>();
+    final timetable = timetableState.currentTimetable;
     if (timetable == null) return const SizedBox();
 
     final periodTimes = timetable.settings['periodTimes'] ?? {};
@@ -41,16 +42,16 @@ class _WeekViewState extends State<WeekView> {
     return Stack(
       children: [
         Column(
-      children: [
-        _buildHeaderRow(timetable),
-        Expanded(
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
+          children: [
+            _buildHeaderRow(timetable),
+            Expanded(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                ),
+                child: _buildCourseGrid(periodTimes, currentCourses),
+              ),
             ),
-            child: _buildCourseGrid(periodTimes, currentCourses),
-          ),
-        ),
           ],
         ),
         const AddCourseFab(),
@@ -87,7 +88,7 @@ class _WeekViewState extends State<WeekView> {
                     height: cellHeight,
                     decoration: BoxDecoration(
                       border: Border(
-                        bottom: periodIndex < maxPeriods - 1 ? BorderSide(color: Colors.grey[300]!, width: 1.0) : BorderSide.none,
+                        bottom: periodIndex < maxPeriods - 1 ? BorderSide(color: Colors.grey[200]!, width: 1.0) : BorderSide.none,
                       ),
                     ),
                     child: Row(
@@ -172,40 +173,16 @@ class _WeekViewState extends State<WeekView> {
     return PeriodLabel(
       period: period,
       timeText: periodTimes[period.toString()] ?? '未知时间',
-      onTap: _showTimeSettingsDialog,
+      onTap: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const TimeSettingsPage(),
+          ),
+        );
+        if (mounted) setState(() {});
+      },
       height: cellHeight,
-    );
-  }
-
-  Future<void> _showTimeSettingsDialog() async {
-    final state = context.read<ScheduleState>();
-    final timetable = state.currentTimetable;
-    if (timetable == null) return;
-
-    final periodTimes = timetable.settings['periodTimes'] ?? {};
-    final maxPeriods = timetable.settings['maxPeriods'] ?? 16;
-
-    final controllers = {
-      for (int i = 1; i <= maxPeriods; i++)
-        i.toString(): TextEditingController(text: periodTimes[i.toString()] ?? '')
-    };
-
-    await showDialog(
-      context: context,
-      builder: (_) => TimeSettingsDialog(
-        controllers: controllers,
-        initialStartDate: timetable.settings['startDate'] != null
-            ? DateTime.parse(timetable.settings['startDate'].toString())
-            : null,
-        onSave: (newTimes, newStartDate) async {
-          timetable.settings['periodTimes'] = newTimes;
-          if (newStartDate != null) {
-            timetable.settings['startDate'] = newStartDate.toString();
-          }
-          await state.updateTimetable(timetable);
-          if (mounted) setState(() {});
-        },
-      ),
     );
   }
 
@@ -231,7 +208,7 @@ class _WeekViewState extends State<WeekView> {
   }
 
   Future<void> _showCourseEditDialog(Course course, int day, int period) async {
-    final state = context.read<ScheduleState>();
+    final timetableState = context.read<TimetableState>();
     
     // 如果是空课程，创建一个默认的课程对象，并设置日期和节次信息
     if (course.isEmpty) {
@@ -251,7 +228,7 @@ class _WeekViewState extends State<WeekView> {
       builder: (_) => CourseEditDialog(
         course: course.copyWith(),
         onSave: (updatedCourse) async {
-          await state.updateCourse(updatedCourse);
+          await timetableState.updateCourse(updatedCourse);
           return true;
         },
         onCancel: () {
@@ -261,7 +238,7 @@ class _WeekViewState extends State<WeekView> {
     );
 
     if (result == true && mounted) {
-      state.updateCourse(Course.empty());
+      timetableState.updateCourse(Course.empty());
     }
   }
 }

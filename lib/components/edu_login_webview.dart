@@ -3,7 +3,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import '../data/timetable.dart';
-import '../states/schedule_state.dart';
+import '../states/timetable_state.dart';
 import '../data/schools/school_service.dart';
 
 class EduLoginWebView extends StatefulWidget {
@@ -34,14 +34,14 @@ class _EduLoginWebViewState extends State<EduLoginWebView> {
         onMessageReceived: (JavaScriptMessage message) async {
           try {
             final rawCourses = jsonDecode(message.message) as List;
-            final state = Provider.of<ScheduleState>(context, listen: false);
-            final timetable = state.currentTimetable;
+            final timetableState = Provider.of<TimetableState>(context, listen: false);
+            final timetable = timetableState.currentTimetable;
             
             final newTimetable = Timetable.fromRawData(
               rawCourses.cast<Map<String, dynamic>>(),
               settings: timetable?.settings ?? {}
             );
-            await state.addTimetable(newTimetable);
+            await timetableState.addTimetable(newTimetable);
             
             if (context.mounted) {
               Navigator.of(context, rootNavigator: true).pop();
@@ -78,8 +78,8 @@ class _EduLoginWebViewState extends State<EduLoginWebView> {
   }
 
   Future<void> _importTimetable() async {
-    final state = Provider.of<ScheduleState>(context, listen: false);
-    final timetable = state.currentTimetable;
+    final timetableState = Provider.of<TimetableState>(context, listen: false);
+    final timetable = timetableState.currentTimetable;
     final schoolName = timetable?.settings['school'] as String?;
     final jsCode = await SchoolService.getJsCode(schoolName ?? '');
     
