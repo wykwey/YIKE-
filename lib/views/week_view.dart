@@ -7,7 +7,6 @@ import '../components/week_view_components/week_header.dart';
 import '../components/week_view_components/period_label.dart';
 import '../components/week_view_components/course_card.dart';
 import '../states/timetable_state.dart';
-import '../states/week_state.dart';
 import '../components/add_course_fab.dart';
 import '../views/time_settings_page.dart';
 

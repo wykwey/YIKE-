@@ -11,7 +11,6 @@ import 'states/week_state.dart';
 import 'states/state_coordinator.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'components/timetable_management_dialog.dart';
-import 'package:flutter/services.dart';
 
 /// 应用入口函数
 ///
@@ -114,7 +113,12 @@ class CourseScheduleScreen extends StatelessWidget {
         scrolledUnderElevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => SystemNavigator.pop(),
+          onPressed: () {
+            final timetableState = Provider.of<TimetableState>(context, listen: false);
+            final viewState = Provider.of<ViewState>(context, listen: false);
+            viewState.changeView('周视图', timetableState.currentTimetable);
+            // 不再退出应用
+          },
         ),
         centerTitle: true,
         title: Row(

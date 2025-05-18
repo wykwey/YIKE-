@@ -20,6 +20,10 @@ class WeekHeader extends StatelessWidget {
     final startDate = startDateString != null 
         ? DateTime.parse(startDateString.toString()) 
         : null;
+    final month = startDate != null
+        ? (startDate.add(Duration(days: 7 * (currentWeek - 1))).month)
+        : DateTime.now().month;
+    final monthText = '$month月';
 
     return Container(
       decoration: BoxDecoration(
@@ -32,7 +36,7 @@ class WeekHeader extends StatelessWidget {
       margin: EdgeInsets.zero,
       child: Row(
         children: [
-          _buildHeaderCell('节数', width: 50),
+          _buildMonthCell(monthText),
           Expanded(
             child: Row(
               children: List.generate(showWeekend ? 7 : 5, (index) {
@@ -47,19 +51,33 @@ class WeekHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildHeaderCell(String text, {double width = 50}) {
+  Widget _buildMonthCell(String monthText) {
+    final num = monthText.replaceAll('月', '');
     return Container(
       width: 40,
       height: 40,
       decoration: const BoxDecoration(),
       alignment: Alignment.center,
-      child: Text(
-        text,
-        style: const TextStyle(
-          color: Colors.black,
-          fontWeight: FontWeight.normal,
-          fontSize: 14,
-        ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            num,
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.normal,
+              fontSize: 14,
+            ),
+          ),
+          Text(
+            '月',
+            style: const TextStyle(
+              color: Colors.black,
+              fontWeight: FontWeight.normal,
+              fontSize: 13,
+            ),
+          ),
+        ],
       ),
     );
   }

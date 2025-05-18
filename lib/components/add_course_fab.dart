@@ -328,7 +328,7 @@ class _AddCourseFabState extends State<AddCourseFab> with SingleTickerProviderSt
       elevation: 4,
       child: child ?? Icon(
         icon,
-        color: Colors.blue[700],
+        color: Colors.blue.shade400,
         size: 28,
       ),
     );

@@ -89,7 +89,7 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 22),
             child: Text(
-              '请调节整节课时间（本节课时间$duration分钟）',
+              '请调节整节课时间（本节$duration分钟）',
               style: const TextStyle(fontSize: 16, fontWeight: FontWeight.normal, color: Colors.black),
             ),
           ),
@@ -120,24 +120,43 @@ class _TimePickerBottomSheetState extends State<TimePickerBottomSheet> {
           ),
           const SizedBox(height: 30),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue.shade400,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.grey.shade200,
+                      foregroundColor: Colors.black87,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.normal),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text('取消'),
+                  ),
                 ),
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
-              onPressed: () {
-                if ((endHour * 60 + endMinute) <= (startHour * 60 + startMinute)) {
-                  _adjustEndTimeIfNeeded();
-                }
-                widget.onTimeSelected(_formatTimeRange());
-                Navigator.pop(context);
-              },
-              child: const Text('确定', style: TextStyle(fontSize: 16)),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: TextButton(
+                    onPressed: () {
+                      if ((endHour * 60 + endMinute) <= (startHour * 60 + startMinute)) {
+                        _adjustEndTimeIfNeeded();
+                      }
+                      widget.onTimeSelected(_formatTimeRange());
+                      Navigator.pop(context);
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.blue.shade400,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 18),
+                      textStyle: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text('确定'),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 20),

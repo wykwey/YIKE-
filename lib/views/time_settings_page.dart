@@ -282,12 +282,19 @@ class _TimeSettingsPageState extends State<TimeSettingsPage> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  ElevatedButton(
+                  TextButton(
                     onPressed: () {
                       if (_sameDurationValue.isNotEmpty) {
                         _applySameDurationDuration();
                       }
                     },
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.blue.shade400,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                    ),
                     child: const Text('应用'),
                   ),
                 ],

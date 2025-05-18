@@ -7,7 +7,7 @@ import 'week_state.dart';
 class StateCoordinator extends StatefulWidget {
   final Widget child;
   
-  const StateCoordinator({Key? key, required this.child}) : super(key: key);
+  const StateCoordinator({super.key, required this.child});
   
   @override
   _StateCoordinatorState createState() => _StateCoordinatorState();

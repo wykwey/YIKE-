@@ -69,7 +69,7 @@ class _SimpleDatePickerState extends State<SimpleDatePicker> {
         child: Container(
           margin: const EdgeInsets.all(2),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.blue : null,
+            color: isSelected ? Colors.blue.shade400 : null,
             borderRadius: BorderRadius.circular(6),
           ),
           alignment: Alignment.center,
@@ -152,7 +152,7 @@ class _SimpleDatePickerState extends State<SimpleDatePicker> {
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       elevation: 0,
-                      backgroundColor: Colors.blue,
+                      backgroundColor: Colors.blue.shade400,
                     ),
                     onPressed: () {
                       if (_selectedDate != null) {

@@ -5,9 +5,9 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../states/timetable_state.dart';
 import '../states/view_state.dart';
-import '../states/week_state.dart';
 import '../components/start_date_picker.dart';
 import './time_settings_page.dart';
+import '../components/bottom_nav_bar.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -81,7 +81,7 @@ class _SettingsPageState extends State<SettingsPage> {
               borderRadius: BorderRadius.circular(8),
               borderColor: Colors.grey,
               selectedColor: Colors.white,
-              fillColor: Colors.blue,
+              fillColor: Colors.blue.shade400,
               color: Colors.black87,
               isSelected: [
                 selectedView == '周视图',
@@ -120,18 +120,27 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             trailing: SizedBox(
               width: 160,
-              child: Slider(
-                value: totalWeeks.toDouble(),
-                min: 1,
-                max: 30,
-                divisions: 29,
-                label: '$totalWeeks',
-                onChanged: (value) async {
-                  if (mounted) {
-                    timetableState.updateTotalWeeks(value.round());
-                    setState(() {});
-                  }
-                },
+              child: SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: Colors.blue.shade400,
+                  inactiveTrackColor: Colors.blue.shade100,
+                  thumbColor: Colors.blue.shade400,
+                  overlayColor: Colors.blue.shade100.withOpacity(0.2),
+                  valueIndicatorColor: Colors.blue.shade400,
+                ),
+                child: Slider(
+                  value: totalWeeks.toDouble(),
+                  min: 1,
+                  max: 30,
+                  divisions: 29,
+                  label: '$totalWeeks',
+                  onChanged: (value) async {
+                    if (mounted) {
+                      timetableState.updateTotalWeeks(value.round());
+                      setState(() {});
+                    }
+                  },
+                ),
               ),
             ),
           ),
@@ -149,18 +158,27 @@ class _SettingsPageState extends State<SettingsPage> {
             subtitle: Text('当前最大节数: $maxPeriods'),
             trailing: SizedBox(
               width: 160,
-              child: Slider(
-                value: maxPeriods.toDouble(),
-                min: 1,
-                max: 16,
-                divisions: 15,
-                label: '$maxPeriods',
-                onChanged: (value) async {
-                  if (mounted) {
-                    timetableState.updateMaxPeriods(value.round());
-                    setState(() {});
-                  }
-                },
+              child: SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                  activeTrackColor: Colors.blue.shade400,
+                  inactiveTrackColor: Colors.blue.shade100,
+                  thumbColor: Colors.blue.shade400,
+                  overlayColor: Colors.blue.shade100.withOpacity(0.2),
+                  valueIndicatorColor: Colors.blue.shade400,
+                ),
+                child: Slider(
+                  value: maxPeriods.toDouble(),
+                  min: 1,
+                  max: 16,
+                  divisions: 15,
+                  label: '$maxPeriods',
+                  onChanged: (value) async {
+                    if (mounted) {
+                      timetableState.updateMaxPeriods(value.round());
+                      setState(() {});
+                    }
+                  },
+                ),
               ),
             ),
           ),
@@ -214,6 +232,16 @@ class _SettingsPageState extends State<SettingsPage> {
             onTap: _showAboutDialog,
           ),
         ],
+      ),
+      bottomNavigationBar: AppBottomNavBar(
+        currentIndex: 2,
+        onTabChanged: (index) {
+          if (index != 2) {
+            final views = ['周视图', '日视图'];
+            Provider.of<ViewState>(context, listen: false).changeView(views[index], Provider.of<TimetableState>(context, listen: false).currentTimetable);
+            Navigator.pop(context);
+          }
+        },
       ),
     );
   }

@@ -3,8 +3,24 @@ import 'package:provider/provider.dart';
 import '../states/timetable_state.dart';
 import '../data/timetable.dart';
 
-class TimetableManagementDialog extends StatelessWidget {
+class TimetableManagementDialog extends StatefulWidget {
   const TimetableManagementDialog({super.key});
+
+  @override
+  State<TimetableManagementDialog> createState() => _TimetableManagementDialogState();
+}
+
+class _TimetableManagementDialogState extends State<TimetableManagementDialog> {
+  String? editingId;
+  final Map<String, TextEditingController> _controllers = {};
+
+  @override
+  void dispose() {
+    for (final c in _controllers.values) {
+      c.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,21 +41,67 @@ class TimetableManagementDialog extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 ...timetableState.timetables.map((timetable) {
-                  return Card(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 2,
+                  final isCurrent = timetable.id == timetableState.currentTimetableId;
+                  _controllers.putIfAbsent(timetable.id, () => TextEditingController(text: timetable.name));
+                  return Container(
                     margin: const EdgeInsets.symmetric(vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isCurrent ? Colors.blue.shade50 : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
                     child: ListTile(
-                      title: Text(timetable.name),
+                      title: isCurrent && editingId == timetable.id
+                          ? TextField(
+                              controller: _controllers[timetable.id],
+                              style: const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
+                              autofocus: true,
+                              onSubmitted: (value) {
+                                final newName = value.trim();
+                                if (newName.isNotEmpty && newName != timetable.name) {
+                                  timetableState.updateTimetable(timetable.copyWith(name: newName));
+                                }
+                                setState(() { editingId = null; });
+                              },
+                              onEditingComplete: () {
+                                final newName = _controllers[timetable.id]!.text.trim();
+                                if (newName.isNotEmpty && newName != timetable.name) {
+                                  timetableState.updateTimetable(timetable.copyWith(name: newName));
+                                }
+                                setState(() { editingId = null; });
+                              },
+                            )
+                          : Text(
+                              timetable.name,
+                              style: const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                       leading: const Icon(Icons.calendar_today_outlined, color: Colors.blueAccent),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          if (timetable.id == timetableState.currentTimetableId)
-                            const Icon(Icons.check_circle, color: Colors.green),
-                          if (!timetable.isDefault)
+                          if (isCurrent)
+                            ...[
+                              const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                              IconButton(
+                                icon: const Icon(Icons.edit, size: 20),
+                                padding: const EdgeInsets.all(4),
+                                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                                tooltip: '重命名',
+                                onPressed: () {
+                                  setState(() { editingId = timetable.id; });
+                                },
+                              ),
+                            ],
+                          if (!isCurrent)
                             IconButton(
-                              icon: const Icon(Icons.delete_outline),
+                              icon: const Icon(Icons.delete_outline, size: 20),
+                              padding: const EdgeInsets.all(4),
+                              constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                               onPressed: () => timetableState.removeTimetable(timetable.id),
                             ),
                         ],

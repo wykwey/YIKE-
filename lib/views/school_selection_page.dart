@@ -52,7 +52,7 @@ class SchoolSelectionPage extends StatelessWidget {
               return ListTile(
                 title: Text(school),
                 trailing: school == currentSchool 
-                    ? const Icon(Icons.check, color: Colors.blue)
+                    ? Icon(Icons.check, color: Colors.blue.shade400)
                     : null,
                 onTap: () => _selectSchool(school, context),
               );
